@@ -2,18 +2,23 @@
 # vim: ft=awk ts=2 sw=2 et :
 BEGIN {DOT="."; DASH="_"}
 
-function make(file,dir, seen,       path,missing) {
+function makes(file,dir, seen,       path,missing) {
   path = dir "/" file
-  if (seen[path]) return 0
-  seen[path]=path
-  print "" > path
-  while((getline < path)>0){ missing=0; make1($0,file,dir,seen) }
+  print "make "path > "/dev/stderr"
+  print path > "/dev/stderr"
+  if (++seen[path]>1) return 0
+  if (seen[path]==1) 
+    print "" > path
+  while((getline < path)>0){ 
+    print "getline "s > "/dev/stderr"
+    missing=0; make($0,file,dir,seen) }
   close(path)
-  if(missing) print "missing file: "file >"/dev/stderr" 
+  if(missing) print "missing file: "file >"/dev/stderr"
 }
-function make1(s,file,dir,seen,  a) {
+function make(s,file,dir,seen,  a) {
+  print "make1 "s > "/dev/stderr"
   if (s ~ /^@include/) 
-    make(gensub(/"([^"]+)"/,"\\1","g",s),dir,seen) 
+    makes(gensub(/"([^"]+)"/,"\\1","g",s),dir,seen) 
   else {
     if (s ~ /^function/) {
       # kill any type hints in function call
