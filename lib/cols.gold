@@ -1,0 +1,18 @@
+# vim: ft=awk ts=2 sw=2 et :
+# what's true about all columns
+
+function adds(a,out,fun,    j) { 
+  for(j in a) {
+    fun = fun?fun:((typeof(a[j])=="number")?"Num":"Sym")
+    print(fun)
+    @fun(out)
+    break
+  }
+  for(j in a) add(out, a[j])
+}
+
+function add(i,x) { 
+  if (x != THE.ch.skip)  { i.n++; add1(i,x) }
+  return x
+}
+

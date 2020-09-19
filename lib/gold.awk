@@ -1,8 +1,10 @@
+#!/usr/bin/env gawk -f
+# vim: ft=awk ts=2 sw=2 et :
 BEGIN {DOT="."; DASH="_"}
 
 function transpile(s,  a) {
   if (s ~ /^@include/) 
-    print s
+    return s
   else {
     if (s ~ /^function/) 
        gsub(/:[A-Za-z0-9]+/,"",s); 
@@ -11,9 +13,25 @@ function transpile(s,  a) {
       PREFIX = a[2] 
     }
     gsub(/_/,PREFIX "_",s)
-    print gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/,
-                  "[\"\\1\\2\"]","g",s)   }
+    return gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/,
+                    "[\"\\1\\2\"]","g",s)   }
 }
+function transpiles(f, seen,g) {
+  if(!OUT) {
+    print "missing outputdir">"/dev/stderr"
+    return 1
+  }
+  gsub(/[" ]/,"",f)
+  seen[f]=f
+  if (f ~ /\.awk$/) return 0
+  g = OUT "/" f 
+  print "" > g
+  while((getline < f)>0)  
+    if ($1 == "@include") transpiles($2, seen)
+    print (f ~/\.awk$/) ? $0 : transpile($0) >>g
+  close(f)
+}
+
 function document(s, t,head,body,pre) {
   head = body = ""
   while(getline) 

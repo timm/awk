@@ -1,0 +1,35 @@
+# vim: ft=awk ts=2 sw=2 et :
+# non-numeric colums
+function Sym(i) {
+  isa(i,"Sym")
+  has(i,"seen")
+  i.mode = i.most = ""
+}
+function _add1(i,x) {
+  i.seen[x] = i.seen[x] + 1
+  if (i.seen[x] > i.most) { i.most=i.seen[x]; i.mode=x}
+}
+function _mid(i) { return i.mode  }
+function _var(i) { return _ent(i) }
+
+function _ent(i,    j,e,n,p) {
+  for(j in i.seen) {
+    n = i.seen[j]
+    if (n > 0) {
+      p  = n/i.n
+      e -= p*log(p)/log(2) }}
+  return e
+}
+function _score(i,goal,all,     
+                  e,y,n,yall,nall,ys,ns,tmp) {
+  e    = 0.00001
+  y    = i.seen[goal]
+  n    = i.n - y
+  yall = all.seen[goal] 
+  nall = all.n - yall
+  ys   = y    / (e+ yall)
+  ns   = n    / (e+ nall)
+  tmp  = ys**2 / (e+ ys + ns)
+  return (i.score = tmp > 0.01 ? tmp : 0)
+}
+

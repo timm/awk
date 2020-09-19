@@ -1,0 +1,15 @@
+# vim: ft=awk ts=2 sw=2 et :
+# numeric columns
+
+function Num(i) {
+  isa(i,"Num")
+  i.hi=-10**32
+  i.lo=10**32
+  has(i,"Some")
+}
+function _add1(i, x) {
+  add(i.some,x)
+  i.hi = max(i.hi,x)
+  i.lo = min(i.lo,x)
+}
+
