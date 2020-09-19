@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=awk ts=2 sw=2 et :
-Src="$HOME/opt/awk"; mkdir -p $Src
-code() { cat<<-'EOF' > $Src/axe
-
+mkdir -p tmp
+gawk -f gold.awk -e'{make($0,"tmp","axe")}'<<EOF
 BEGIN { 
   THE.some.max = 256 
   THE.ch.skip = "?" 
@@ -10,8 +9,7 @@ BEGIN {
   THE.all.rand  = 1
 }
 
-@include "lib/gold.awk"
-@include "lib/poly.golf"
+@include "lib/poly.gold"
 @include "lib/cols.gold"
 @include "lib/sym.gold"
 @include "lib/num.gold"
@@ -22,5 +20,4 @@ BEGIN {
 BEGIN { tests(); rogues() }
 
 }
-cat $Src/axe | ./gold.awk src=$Src -e '/@include/{transpiles($2)}'
-AWKPATH="$Src:$AWKPATH" gawk -f $Src/axe
+AWKPATH="tmp:$AWKPATH" gawk -f gold.awk -f tmp/axe
