@@ -116,17 +116,15 @@ function push(x,a)    { a[length(a)+1] =x; return x}
 ## Resets `i` to the empty list, then adds `i.isa=y` and `i.id=n` 
 ## where `n` is a unique number.
 ## Returns  the newly created `i.id`.
-function isa(i,y)     { List(i);i["id"] = ++ID; i["isa"]=y; return ID}
 
 ### List(i:list0) :nil
 ## Resets `i` to the empty list 
-function List(i)      { delete i }
-
-### has(i:list
-function has(i,k,f)   { f=f?f:"List";zap(i,k); @f(i[k]) }
-function hasmore(i,f) { has(i,length(i)+1, f); return length(i) } 
-
-function zap(i,k)     { i[k][0]; List(i[k]) }
+function isa(i,klass)        { Obj(i); i["isa"] = klass }
+function List(i)             { split("",i,"") }
+function Obj(i)              { List(i); i["isa"] = "Obj"; i["id"] = ++ID; return ID }
+function zap(i,k)            { k=k?k:length(i)+1; i[k][0]; List(i[k]); return k } 
+function has( i,k,f,      s) { f=f?f:"List"; s=zap(i,k); @f(i[k]); return s}
+function hasmore(i,f)        { return has(i,"",f) }
 
 function max(x,y) { return x>y ? x : y }
 function min(x,y) { return x<y ? x : y }

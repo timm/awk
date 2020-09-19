@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vim: ft=awk ts=2 sw=2 et :
-code() { cat<<'EOF'
+code() { cat<<'EOF'|gawk -f gold.awk -e '{transpile($0)}' 
 #------------------------------------------------
 BEGIN { 
   THE.some.max = 256 
@@ -14,13 +14,14 @@ function loop(i,   f) {f=i.isa "_loop"; return @f(i.x) }
 function var(i,    f) {f=i.isa "_var";  return @f(i.x) }
 function mid(i,    f) {f=i.isa "_mid";  return @f(i.x) }
 #------------------------------------------------
-function adds(a,log,fun,    j) { 
+function adds(a,out,fun,    j) { 
   for(j in a) {
-    fun = fun?fun:(typeof(a[j])=="number"?"Num":"Sym")
-    @fun(log)
+    fun = fun?fun:((typeof(a[j])=="number")?"Num":"Sym")
+    print(fun)
+    @fun(out)
     break
   }
-  for(j in a) add(log, a[j])
+  for(j in a) add(out, a[j])
 }
 
 function add(i,x) { 
@@ -167,11 +168,14 @@ function cliffs(as,bs,t,    a,b,n,lt,gt) {
 #------------------------------------------------
 function egFail(f) { ok(f,1==2) }
 function egPass(f) { ok(f,1==1) }
-function egSum(f, s,a) {
+function egSym(f, s) {
   Sym(s)
+  oo(s)
+}
+function egSyms(f, s,a,tmp) {
   split("aaaaabbc",a,"")
-  adds(a,log,"Sym")
-  assert(1.378 <= var(log) and var(log) <= 1.379)
+  adds(a,tmp,"Sym")
+  assert(1.378 <= var(tmp) && var(tmp) <= 1.379)
   #s=adds({"a","a","a","a","a","a","a"},Sym.new())
   #assert(s:ent()==0)
 
@@ -180,5 +184,4 @@ function egSum(f, s,a) {
 BEGIN { allegs(); rogues() }
 EOF
 }
-code | gawk -f gold.awk --source '{transpile($0)}' > /tmp/$$gold.awk
-gawk -f gold.awk -f  /tmp/$$gold.awk
+code > /tmp/$$gold.awk;gawk -f gold.awk -f /tmp/$$gold.awk
