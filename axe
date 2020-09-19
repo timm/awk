@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=awk ts=2 sw=2 et :
 mkdir -p tmp
-gawk -f gold.awk -e'{make($0,"tmp","axe")}'<<EOF
+gawk -f gold.awk -e'BEGIN{make("axe","tmp")}'<<EOF
 BEGIN { 
   THE.some.max = 256 
   THE.ch.skip = "?" 
@@ -14,7 +14,7 @@ BEGIN {
 @include "lib/sym.gold"
 @include "lib/num.gold"
 @include "lib/some.gold"
-@include "lib/cows.gold"
+@include "lib/cols.gold"
 @include "tests/goldok.gold"
 
 BEGIN { tests(); rogues() }

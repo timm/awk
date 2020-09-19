@@ -2,29 +2,35 @@
 # vim: ft=awk ts=2 sw=2 et :
 BEGIN {DOT="."; DASH="_"}
 
-function transpile(s,out,seen,  a) {
-  out=out?out:OUT
-  if(!out) print "missing output dir">"/dev/stderr"
+function make(file,dir, seen,       path,missing) {
+  path = dir "/" file
+  if (seen[path]) return 0
+  seen[path]=path
+  print "" > path
+  while((getline < path)>0){ missing=0; make1($0,file,dir,seen) }
+  close(path)
+  if(missing) print "missing file: "file >"/dev/stderr" 
+}
+function make1(s,file,dir,seen,  a) {
+  if (s ~ /^@include/) 
+    make(gensub(/"([^"]+)"/,"\\1","g",s),dir,seen) 
   else {
-    if (s ~ /^@include/) transpiles(s,seen) 
-    else {
-      if (s ~ /^function/) gsub(/:[A-Za-z0-9]+/,"",s)  
+    if (s ~ /^function/) {
+      # kill any type hints in function call
+      gsub(/:[A-Za-z0-9]+/,"",s)  
+      # if this is a class, catch that name as a prefix
       if (s ~ /^function[ \t]+[A-Z][^\(]*\(/) {
         split(s,a,/[ \t\(]/)
         PREFIX = a[2] 
       }
+      # add the prefix, where needed
       gsub(/_/,PREFIX "_",s)
-      print gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/,
-                      "[\"\\1\\2\"]","g",s) >> out 
-}}}
-function transpiles(f, seen,g,missing) {
-  f = gensub(/"([^"]+)"/,"\\1","g",f)
-  if (seen[f]) return 0
-  seen[f]=f
-  print "" > f
-  while((getline < f)>0) { missing=0; transpile($0,f,seen) }
-  close(f)
-  if(missing) print "missing file: "f >"/dev/stderr" 
+    }
+    # convert dots to accessor
+    s= gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/,
+                "[\"\\1\\2\"]","g",s)
+  }
+  print s>> dir"/"file
 }
 
 function document(s, t,head,body,pre) {
