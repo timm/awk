@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# vim: ft=awk ts=2 sw=2 et :
+mkdir -p tmp
+rm -f tmp/axe
+gawk -f gold.awk -e'{make($0,"axe","tmp")}'<<'EOF'
+BEGIN { 
+  THE.some.max = 256 
+  THE.ch.skip = "?" 
+  THE.stats.cliff = "?" 
+  THE.all.rand  = 1
+  print ENVIRON["AWKPATH"]
+}
+
+@include "poly.gold"
+@include "cols.gold"
+@include "sym.gold"
+@include "num.gold"
+@include "some.gold"
+@include "cols.gold"
+@include "goldok.gold"
+
+BEGIN { tests(); rogues() }
+
+EOF
+AWKPATH="tmp/:$AWKPATH"  gawk -f gold.awk -f tmp/axe

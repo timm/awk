@@ -1,15 +1,15 @@
 # vim: ft=awk ts=2 sw=2 et :
 # unit tests
-function egFail(f) { ok(f,1==2) }
+function okFail(f) { ok(f,1==2) }
 
-function egPass(f) { ok(f,1==1) }
+function okFail(f) { ok(f,1==1) }
 
-function egSym(f, s) {
+function okSym(f, s) {
   Sym(s)
   oo(s)
 }
 
-function egSyms(f, s,a,tmp) {
+function okSyms(f, s,a,tmp) {
   split("aaaaabbc",a,"")
   adds(a,tmp,"Sym")
   assert(1.378 <= var(tmp) && var(tmp) <= 1.379)

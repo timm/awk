@@ -3,22 +3,19 @@
 BEGIN {DOT="."; DASH="_"}
 
 function makes(file,dir, seen,       path,missing) {
-  path = dir "/" file
-  print "make "path > "/dev/stderr"
-  print path > "/dev/stderr"
-  if (++seen[path]>1) return 0
+  path = dir "/" file 
+  seen[path]++
   if (seen[path]==1) 
     print "" > path
+  if (seen[path]>1) return 0
   while((getline < path)>0){ 
-    print "getline "s > "/dev/stderr"
     missing=0; make($0,file,dir,seen) }
   close(path)
   if(missing) print "missing file: "file >"/dev/stderr"
 }
 function make(s,file,dir,seen,  a) {
-  print "make1 "s > "/dev/stderr"
   if (s ~ /^@include/) 
-    makes(gensub(/"([^"]+)"/,"\\1","g",s),dir,seen) 
+    makes(gensub(/.*"([^"]+)".*$/,"\\1","g",s),dir,seen) 
   else {
     if (s ~ /^function/) {
       # kill any type hints in function call
@@ -161,11 +158,10 @@ function ok(f,a,n) {
    n = f " :"int(0.5+100*PASS/(PASS+FAIL+0.00001))"%"
    print a ? green("Pass " n ) : red("Fail " n) 
 }
-function allegs(   fun) { 
+function tests(   fun) { 
   for(fun in FUNCTAB) 
-    if(fun ~ /^eg/) 
+    if(fun ~ /^ok./)
       @fun(fun) 
-  
 } 
 function rogues(    s) {
   for(s in SYMTAB) 
