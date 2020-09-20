@@ -1,0 +1,4 @@
+#!/usr/bin/env ../gold
+# vim : set ft=awk :
+
+{print 1 $0}
