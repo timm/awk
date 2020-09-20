@@ -1,6 +1,7 @@
 #!/usr/bin/env gawk -f
 # vim: ft=awk ts=2 sw=2 et :
 BEGIN {DOT="."; DASH="_"}
+BEGIN{print 1}
 
 function makes(file,dir, seen,       path,missing) {
   path = dir "/" file 

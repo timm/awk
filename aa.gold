@@ -1,0 +1,6 @@
+#!/usr/bin/env ./gold
+# vim: ft=awk ts=2 sw=2 et :
+
+function Num(i) {i.x=1; }
+BEGIN{print 1}
+{print "aa" $0}
