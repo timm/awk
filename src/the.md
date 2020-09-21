@@ -13,7 +13,7 @@
    :: <a href="https://github.com/timm/awk/blob/master/CONTACT.md#contatct">contact</a>
 </p>
 <p align=center>
-   <img width=600 src="https://github.com/timm/awk/raw/master/etc/img/coins.png">
+   <img width=450 src="https://github.com/timm/awk/raw/master/etc/img/coins.png">
 </p>
 <p align=center>
    <img src="https://img.shields.io/badge/language-gawk-orange">
