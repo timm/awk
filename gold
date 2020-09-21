@@ -35,14 +35,11 @@ doc() {
               { print ""; print }'  
 }
 docs() {
-  echo $Dir
   local f=`ls $Dir/src/*.md 2>/dev/null`
-  echo $f
   if [ -n "$f" ]; then 
     for g in $f
     do
        if [ "$Dir/README.md" -nt "$g" ]; then
-         echo $g
          local h=$(mktemp)
          doc $g > $h
          mv $h $g
