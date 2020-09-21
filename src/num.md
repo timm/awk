@@ -6,11 +6,11 @@
 </h1>
 <p align=center>
    <a    href="https://github.com/timm/awk/blob/masterREADME.md#license">license</a>
-   :: <a href="https://github.com/timm/awk/blob/master/INSTALL.md#install">install</a>
-   :: <a href="https://github.com/timm/awk/blob/master/CONTRIBUTE.md#contribute">contribute</a>
+   :: <a href="https://github.com/timm/awk/blob/master/README.md#install">install</a>
+   :: <a href="https://github.com/timm/awk/blob/master/README.md#contribute">contribute</a>
    :: <a href="https://github.com/timm/awk/issues">issues</a>
-   :: <a href="https://github.com/timm/awk/blob/master/CITATION.md#citation">cite</a>
-   :: <a href="https://github.com/timm/awk/blob/master/CONTACT.md#contatct">contact</a>
+   :: <a href="https://github.com/timm/awk/blob/master/README.md#citation">cite</a>
+   :: <a href="https://github.com/timm/awk/blob/master/README.md#contatct">contact</a>
 </p>
 <p align=center>
    <img width=450 src="https://github.com/timm/awk/raw/master/etc/img/coins.png">
