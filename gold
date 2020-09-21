@@ -35,7 +35,7 @@ doc() {
               { print ""; print }'  
 }
 docs() {
-  local f=`ls $Dir/src/*.md 2>/dev/null`
+  local f=`ls $Dir/docs/*.md 2>/dev/null`
   if [ -n "$f" ]; then 
     for g in $f
     do
@@ -115,7 +115,7 @@ mytmux() {
   $Tmux start-server
   sleep 1
   $Tmux new-session -d -s $session  
-  $Tmux send-keys ". $Dir/$Sh"  C-m  ". $Dir/gold" C-m "cd $Dir/src;  sleep 0.5" C-m "vi some.md" C-m
+  $Tmux send-keys ". $Dir/$Sh"  C-m  ". $Dir/gold" C-m "cd $Dir/docs;  sleep 0.5" C-m "vi *.md" C-m
 
   $Tmux splitw -h -p 20
   $Tmux selectp -t 1
@@ -136,7 +136,7 @@ startup() {
   [ -z "$TMUX" ] && mytmux
 }
 
-want=$Dir/src/gold.awk
+want=$Dir/docs/gold.awk
 mkdir -p $(dirname $want)
 [ -f "$want" ] || cat<<-'EOF'>$want
 	# vim: ft=awk ts=2 sw=2 et :
