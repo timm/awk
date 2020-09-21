@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
 Lib=$HOME/opt/awk
 
-gold2awk() {
+transpile() { gawk '
+  /^@include / { print; next }
+  /^function[ \t]+[A-Z][^\(]*\(/ {
+      split($0,a,/[ \t\(]/)
+      PREFIX = a[2]
+  }
+  { gsub(/_/,PREFIX "_",$0)
+    print gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/, 
+                  "[\"\\1\\2\"]","g", $0)
+  }' 
+}
+transpiles() {
   for i in *.gold; do 
-   if [ $i -nt "$Lib/$i" ]; then
-     cat $i | gawk '{
-       print gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/, 
-                     "[\"\\1\\2\"]","g", $0)
-       }' > $Lib/$i
-   fi
+    cat $i | transpile > $Lib/$i
   done
 }
-if [ -n "$1" ]; then
+if [ "$1" == "--reset" ]; then
+  rm -f $Lib/*
+  transpiles
+  exit
+elif [ -n "$1" ]; then
   f=$1
   shift
-  gold2awk
+  transpiles
   if [ -t 0 ]
   then       AWKPATH="$Lib:./:$AWKPATH" gawk -f $Lib/$f $*
   else cat -|AWKPATH="$Lib:./:$AWKPATH" gawk -f $Lib/$f $*

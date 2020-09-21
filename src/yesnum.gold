@@ -1,0 +1,18 @@
+# vim: ft=awk ts=2 sw=2 et :
+
+@include "gold.awk"
+@include "list.gold"
+@include "num.gold"
+
+function okNum(fun,  x,j) {
+  Num(x)
+  oo(x)
+  for(j=1;j<=100;j++) {
+    add(x, 6)
+    add(x, 2)
+    add(x, 3)
+    add(x, 1)
+  }
+  print(var(x.some))
+}
+BEGIN {tests()}

@@ -1,0 +1,21 @@
+# vim: ft=awk ts=2 sw=2 et :
+
+@include "gold.awk"
+@include "some.gold"
+
+function okSome(fun,  n,a,b,j,x) {
+  for(n=1;n<=1.5;n+= 0.05) 
+     _okSome(fun,n)
+}
+function _okSome(fun,n,   a,b,x,j,f) {
+  Some(a)
+  Some(b)
+  for(j=1; j<=100; j++) {
+     x = rand()
+     add(a, x)
+     add(b, x*n) }
+  f= Some_same(a,b)
+  ok(fun n "var",var(a) <= .35 && var(a) >=.25)
+  ok(fun n DOT f,  n <=1.2 ? f==1 : f==0)
+}
+BEGIN { tests() }

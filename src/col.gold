@@ -1,0 +1,16 @@
+# vim: ft=awk ts=2 sw=2 et :
+
+@include "the.gold"
+@include "poly.gold"
+@include "num.gold"
+
+function adds(a,out,fun,    j) {
+  fun = fun?fun:"Num"
+  @fun(out)
+  for(j in a) add(out, a[j])
+}
+
+function add(i,x) {
+  if (x != THE.ch.skip)  { i.n++; add1(i,x) }
+  return x
+}
