@@ -1,6 +1,3 @@
-# vim: ts=2 sw=2 et :
-# hold just  some things in a column (reservoir sampling)
-
 # acids
 
 Sadatsdas asd asdas das
