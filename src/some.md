@@ -1,13 +1,15 @@
-# vim: ft=awk ts=2 sw=2 et :
+# vim: ts=2 sw=2 et :
 # hold just  some things in a column (reservoir sampling)
 
-# asds
+# acids
 
-sadas
+Sadatsdas asd asdas das
+asdas
+asdasad
 
-- asdas
-- asda
-- adas
+- Adas
+- Aida
+- Adas
 
 ```awk
 @include "the.gold"
