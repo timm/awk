@@ -1,3 +1,9 @@
+<a name=top>aa | aa | assaa | as<br>
+<p align=center>
+<h1>Gold</h1>
+</p>
+<hr>
+
 ```awk
 function csv(a,file,     j,b4, ready,line,x,y) {
   file  = file ? file : "-"           # [1]

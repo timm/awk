@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 Lib=$HOME/opt/awk
+Dir=$(cd $( dirname "${BASH_SOURCE[0]}" ) && pwd )
+Tmux=$(which tmux)
+Needs="gawk bash"
 
 md2awk() { gawk '
   BEGIN            { Pre="#" }
@@ -32,11 +35,14 @@ doc() {
               { print ""; print }'  
 }
 docs() {
+  echo $Dir
   local f=`ls $Dir/src/*.md 2>/dev/null`
+  echo $f
   if [ -n "$f" ]; then 
     for g in $f
     do
        if [ "$Dir/README.md" -nt "$g" ]; then
+         echo $g
          local h=$(mktemp)
          doc $g > $h
          mv $h $g
@@ -47,7 +53,8 @@ docs() {
 
 if [ "$1" == "--md" ]; then
   docs
-if [ "$1" == "--all" ]; then
+  exit
+elif [ "$1" == "--all" ]; then
   rm -f $Lib/*
   md2awks
   exit
@@ -64,11 +71,7 @@ fi
 
 ####################################
 mkdir -p $Lib
-chmod +x gold
-
-Dir=$(cd $( dirname "${BASH_SOURCE[0]}" ) && pwd )
-Tmux=$(which tmux)
-Needs="gawk bash"
+chmod +x $Dir/gold
 
 for c in $Needs; do
   if [ -z `which $c` ]; then
