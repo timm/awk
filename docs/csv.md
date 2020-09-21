@@ -1,5 +1,5 @@
 <a name=top>
-<h1 align=center>
+<h2 align=center>
      GOLD = the Gawk Object Layer
 </h1>
 <p align=center>
