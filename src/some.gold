@@ -24,7 +24,7 @@ function _update(i,x,k) { i.all[k]=x; i.ok=0 }
 function _ok(i)  { 
   if (!i.ok) i.ok= asort(i.all) }
 
-function _var(i,  lo,hi) { return (_per(i,.9) - _per(i, .1))/2.6 }
+function _var(i,  lo,hi) { return ( _per(i,.9) - _per(i, .1))/2.6 }
 function _mid(i,  lo,hi) { return _per(i,.5,lo,hi) }
 
 function _per(i,p , lo,hi) {

@@ -3,9 +3,16 @@
 @include "gold.awk"
 @include "some.gold"
 
-function okSome(fun,  n,a,b,j,x) {
+function okSome1(fun,  n,a,b,j,x) {
   for(n=1;n<=1.5;n+= 0.05) 
      _okSome(fun,n)
+}
+function okSome2(fun,  a,j) {
+   Some(a)
+   a.max = 32
+   for(j=1;j<=10000; j++) add(a,j)
+   Some_ok(a)
+   ok(fun, length(a.all) < 35)
 }
 function _okSome(fun,n,   a,b,x,j,f) {
   Some(a)

@@ -7,7 +7,7 @@ transpile() { gawk '
       split($0,a,/[ \t\(]/)
       PREFIX = a[2]
   }
-  { gsub(/_/,PREFIX "_",$0)
+  { gsub(/ _/," " PREFIX "_",$0)
     print gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/, 
                   "[\"\\1\\2\"]","g", $0)
   }' 
@@ -17,7 +17,7 @@ transpiles() {
     cat $i | transpile > $Lib/$i
   done
 }
-if [ "$1" == "--reset" ]; then
+if [ "$1" == "--all" ]; then
   rm -f $Lib/*
   transpiles
   exit
