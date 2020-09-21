@@ -1,8 +1,8 @@
 <a name=top>
-<h2 align=center>
+<h2>
      GOLD = the Gawk Object Layer
 </h2>
-<p align=center>
+<p>
    <a    href="https://github.com/timm/awk/blob/masterREADME.md#license">license</a>
    :: <a href="https://github.com/timm/awk/blob/master/README.md#install">install</a>
    :: <a href="https://github.com/timm/awk/blob/master/README.md#contribute">contribute</a>
@@ -10,7 +10,7 @@
    :: <a href="https://github.com/timm/awk/blob/master/README.md#citation">cite</a>
    :: <a href="https://github.com/timm/awk/blob/master/README.md#contatct">contact</a>
 </p>
-<p align=center>
+<p>
    <img src="https://img.shields.io/badge/language-gawk-orange">
    <img src="https://img.shields.io/badge/purpose-ai,se-blueviolet">
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
