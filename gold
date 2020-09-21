@@ -48,13 +48,8 @@ docs() {
   fi
 }
 
-if [ "$1" == "--md" ]; then
-  docs
-  exit
-elif [ "$1" == "--all" ]; then
-  rm -f $Lib/*
-  md2awks
-  exit
+if   [ "$1" == "--md"  ]; then docs; exit;
+elif [ "$1" == "--all" ]; then rm -f $Lib/*; md2awks; exit;
 elif [ -n "$1" ]; then
   f=$(basename $1 .md).awk
   shift
@@ -82,7 +77,7 @@ hello() {
 
         .-"-.
        /  ,~a\_
-       \  \__))>  a little awk
+       \  \__))>  a little auk (awk)
        ,) ." \     goes a long way
       /  (    \
      /   )    ;
@@ -108,7 +103,7 @@ alias ls='ls -G'                              # ls
 #alias ok="dart -U "                           # run a unit test
 #alias oks="dart -U all"                       # run all unit tests
 #alias okspy="rerun 'lua dart.lua -U all'"     # retest if files change
-alias reload='. $Dir/gold'                     # reload these tools
+alias reload='. $Dir/gold'                    # reload these tools
 alias tmux=mytmux                             # 2-pane tmux environment
 alias vims="vim +PluginInstall +qall"         # install vim plugins 
 
@@ -120,11 +115,11 @@ mytmux() {
   $Tmux start-server
   sleep 1
   $Tmux new-session -d -s $session  
-  $Tmux send-keys ". $Dir/$Sh"  C-m  ". $Dir/gold; hello" C-m
+  $Tmux send-keys ". $Dir/$Sh"  C-m  ". $Dir/gold" C-m "cd $Dir/src;  sleep 0.5" C-m "vi some.md" C-m
 
   $Tmux splitw -h -p 20
   $Tmux selectp -t 1
-  $Tmux send-keys ".  $Dir/$Sh"  C-m  ". $Dir/gold; clear" C-m
+  $Tmux send-keys ".  $Dir/$Sh"  C-m  ". $Dir/gold; hello" C-m
 
   $Tmux splitw -v  -p 5
   $Tmux selectp -t 2
