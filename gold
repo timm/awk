@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 Lib=$HOME/opt/awk
 
-transpile() { gawk '
+md2awk() { gawk '
   BEGIN            { Pre="#" }
   sub(/```awk/,"") { Pre=""  ; print; next}
   sub(/```/,"")    { Pre="# "; print; next}
@@ -15,20 +15,46 @@ transpile() { gawk '
                       "[\"\\1\\2\"]","g", $0)
   }' 
 }
-transpiles() {
+md2awks() {
   for i in *.md; do 
     j=$(basename $i .md).awk
-    cat $i | transpile > $Lib/$j
+    cat $i | md2awk > $Lib/$j
   done
 }
+
+doc() {
+  cat $Dir/README.md | gawk '
+        BEGIN { FS="\n"; RS="" } 
+              { print; exit 0  }'  
+  cat $1 | gawk '
+        BEGIN { FS="\n"; RS="" } 
+        NR==1 && $1~/name=top>/ { next }
+              { print ""; print }'  
+}
+docs() {
+  local f=`ls $Dir/src/*.md 2>/dev/null`
+  if [ -n "$f" ]; then 
+    for g in $f
+    do
+       if [ "$Dir/README.md" -nt "$g" ]; then
+         local h=$(mktemp)
+         doc $g > $h
+         mv $h $g
+       fi
+    done
+  fi
+}
+
+if [ "$1" == "--md" ]; then
+  docs
 if [ "$1" == "--all" ]; then
   rm -f $Lib/*
-  transpiles
+  md2awks
   exit
 elif [ -n "$1" ]; then
   f=$(basename $1 .md).awk
   shift
-  transpiles
+  md2awks
   if [ -t 0 ]
   then       AWKPATH="$Lib:./:$AWKPATH" gawk -f $Lib/$f $*
   else cat -|AWKPATH="$Lib:./:$AWKPATH" gawk -f $Lib/$f $*
@@ -189,9 +215,17 @@ mkdir -p $(dirname $want)
 	right_meter_modes=4 1 1
 EOF
 	 
+want=$Dir/README.md
+[ -f "$want" ] || cat<<'EOF'>$want
+<a name=top>Header<br>
+<p align=center>README</p>
+<hr>
+
+EOF
+
 want=$Dir/.travis.yml
 [ -f "$want" ] || cat<<'EOF'>$want
-anguage: C
+language: C
 
 sudo: true
 
