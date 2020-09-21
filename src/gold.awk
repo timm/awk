@@ -1,5 +1,5 @@
 # vim: ft=awk ts=2 sw=2 et :
-BEGIN {DOT="."}
+BEGIN {DOT="."; DASH="_"}
 
 #### object system
 function isa(i,klass)    { Obj(i); i["isa"] = klass }
