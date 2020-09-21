@@ -1,7 +1,7 @@
 <a name=top>
 <h2 align=center>
      GOLD = the Gawk Object Layer
-</h1>
+</h2>
 <p align=center>
    <a    href="https://github.com/timm/awk/blob/masterREADME.md#license">license</a>
    :: <a href="https://github.com/timm/awk/blob/master/README.md#install">install</a>
