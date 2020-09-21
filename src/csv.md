@@ -1,5 +1,4 @@
-# vim: ft=awk ts=2 sw=2 et :
-
+```awk
 function csv(a,file,     j,b4, ready,line,x,y) {
   file  = file ? file : "-"           # [1]
   ready = getline < file
@@ -33,3 +32,4 @@ function cols(a,out,file,    ready,j,b) {
     for(j in a) out[j] = b[a[j]]
   return 1
 }
+```

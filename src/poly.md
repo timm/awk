@@ -1,7 +1,6 @@
-# vim: ft=awk ts=2 sw=2 et :
-
+```awk
 function add1(i,x, f) { f=i.isa "_add1"; return @f(i,x) }
 function loop(i,   f) { f=i.isa "_loop"; return @f(i) }
 function var(i,    f) { f=i.isa "_var";  return @f(i) }
 function mid(i,    f) { f=i.isa "_mid";  return @f(i) }
-
+```

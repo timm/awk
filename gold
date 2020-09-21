@@ -2,19 +2,23 @@
 Lib=$HOME/opt/awk
 
 transpile() { gawk '
+  BEGIN            { Pre="#" }
+  sub(/```awk/,"") { Pre=""  ; print; next}
+  sub(/```/,"")    { Pre="# "; print; next}
   /^@include / { print; next }
   /^function[ \t]+[A-Z][^\(]*\(/ {
       split($0,a,/[ \t\(]/)
       PREFIX = a[2]
   }
   { gsub(/ _/," " PREFIX "_",$0)
-    print gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/, 
-                  "[\"\\1\\2\"]","g", $0)
+    print Pre gensub( /\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/, 
+                      "[\"\\1\\2\"]","g", $0)
   }' 
 }
 transpiles() {
-  for i in *.gold; do 
-    cat $i | transpile > $Lib/$i
+  for i in *.md; do 
+    j=$(basename $i .md).awk
+    cat $i | transpile > $Lib/$j
   done
 }
 if [ "$1" == "--all" ]; then
@@ -22,7 +26,7 @@ if [ "$1" == "--all" ]; then
   transpiles
   exit
 elif [ -n "$1" ]; then
-  f=$1
+  f=$(basename $1 .md).awk
   shift
   transpiles
   if [ -t 0 ]

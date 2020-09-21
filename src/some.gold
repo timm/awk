@@ -1,10 +1,10 @@
-# vim: ft=awk ts=2 sw=2 et :
 # hold just  some things in a column (reservoir sampling)
 
-@include "the.gold"
-@include "list.gold"
-@include "col.gold"
-@include "math.gold"
+```awk
+@include "the"
+@include "list"
+@include "col"
+@include "math"
 
 function Some(i, max) {
   isa(i,"Some")
@@ -56,3 +56,4 @@ function cliffs(as,bs,t,    a,b,n,lt,gt) {
   }
   return abs(lt-gt)/n < t
 }
+```

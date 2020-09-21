@@ -1,4 +1,3 @@
-# vim: ft=awk ts=2 sw=2 et :
 BEGIN {DOT="."; DASH="_"}
 
 #### object system

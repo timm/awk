@@ -1,8 +1,8 @@
-# vim: ft=awk ts=2 sw=2 et :
-
-@include "gold.awk"
-@include "list.gold"
-@include "num.gold"
+```awk
+@include "gold"
+@include "list"
+@include "num"
+```
 
 # asdas
 
@@ -11,6 +11,7 @@ asdas
 - asdad
 - asdasa
 
+```awk
 function okNum(fun,  x,j) {
   Num(x)
   oo(x)
@@ -23,3 +24,4 @@ function okNum(fun,  x,j) {
   print(var(x.some))
 }
 BEGIN {tests()}
+```

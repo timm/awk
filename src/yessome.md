@@ -1,7 +1,6 @@
-# vim: ft=awk ts=2 sw=2 et :
-
-@include "gold.awk"
-@include "some.gold"
+```awk
+@include "gold"
+@include "some"
 
 function okSome1(fun,  n,a,b,j,x) {
   for(n=1;n<=1.5;n+= 0.05) 
@@ -26,3 +25,4 @@ function _okSome(fun,n,   a,b,x,j,f) {
   ok(fun n DOT f,  n <=1.2 ? f==1 : f==0)
 }
 BEGIN { tests() }
+```

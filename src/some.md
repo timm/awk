@@ -1,18 +1,12 @@
-# acids
+# Some
 
-Sadatsdas asd asdas das
-asdas
-asdasad
-
-- Adas
-- Aida
-- Adas
+Reservoir Sampling
 
 ```awk
-@include "the.gold"
-@include "list.gold"
-@include "col.gold"
-@include "math.gold"
+@include "the"
+@include "list"
+@include "col"
+@include "math"
 
 function Some(i, max) {
   isa(i,"Some")

@@ -1,7 +1,7 @@
-# vim: ft=awk ts=2 sw=2 et :
 # numeric columns
 
-@include "some.gold"
+```awk
+@include "some"
 
 function Num(i) {
   isa(i,"Num")
@@ -17,4 +17,4 @@ function _add1(i, x) {
   i.hi = max(i.hi,x)
   i.lo = min(i.lo,x)
 }
-
+```

@@ -1,5 +1,5 @@
-# vim: ft=awk ts=2 sw=2 et :
 
+```awk
 BEGIN {
   THE.some.max    = 256
   THE.some.few    =  64
@@ -12,3 +12,4 @@ BEGIN {
   THE.ch.num      = ":"
   THE.ch.klass    = "!"
 }
+```
