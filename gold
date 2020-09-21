@@ -49,8 +49,8 @@ docs() {
   fi
 }
 
-#if   [ "$1" == "--md"  ]; then docs; exit;
-if  [ "$1" == "--all" ]; then rm -f $Lib/*; md2awks; exit;
+if   [ "$1" == "--md"  ]; then docs; exit;
+elif [ "$1" == "--all" ]; then rm -f $Lib/*; md2awks; exit;
 elif [ -n "$1" ]; then
   f=$(basename $1 .md).awk
   shift
