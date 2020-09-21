@@ -2,7 +2,7 @@
 ---
 
 @import "{{ site.theme }}";
-pre { font-size: 11px; 
+pre { font-size: 110px; 
       line-spacing: 105%;
     }
 
