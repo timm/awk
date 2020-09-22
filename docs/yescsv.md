@@ -23,7 +23,7 @@
 @include "poly"
 @include "csv"
 
-function okCsv(fun,  ing) {
+function okCsv(fun,  n,ing) {
   Cols(ing, data("weather"))
   while(loop(ing) )
     print o(ing.it)

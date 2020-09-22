@@ -18,23 +18,15 @@
 
 ```awk
 function csv(a,file,     j,b4, ready,line,x,y) {
-  file  = file ? file : "-"           # [1]
+  file  = file ? file : "-"           
   ready = getline < file
-  if (ready<0) {
-    print "#E> Missing file ["file"]"  # [2]
-    exit 1
-  }
-  if (ready==0) {
-    close(file)
-    return 0
-  }                                    # [3]
-  line = b4 $0                         # [4]
-  gsub(/([ \t]*|#.*$)/, "", line)      # [5]
-  if (!line)
-    return csv(a,file, line)           # [6]
-  if (line ~ /,$/)
-    return csv(a,file, line)           # [4]
-  split(line, a, ",")                  # [7]
+  if (ready <0) { print "#E> Missing file ["file"]";exit 1 }
+  if (ready==0) { close(file);return 0 }                                    
+  line = b4 $0                         
+  gsub(/([ \t]*|#.*$)/, "", line)      
+  if (!line)       return csv(a,file, line)           
+  if (line ~ /,$/) return csv(a,file, line)           
+  split(line, a, ",")                  
   for(j in a)  {
     x=a[j]
     y=a[j]+0
@@ -47,11 +39,11 @@ include "?".
 ```awk
 function Cols(i,file) {
   isa(i,"Cols")
-  i.file=file
+  i.file = file
   has(i,"it")
   has(i,"use")
 }
-function _loop(i,    ready,get,put) {
+function _loop(i,    a,ready,get,put) {
   ready = csv(a,i.file)
   if (ready<1) return 0
   if (!length(i.use))
