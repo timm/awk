@@ -24,8 +24,9 @@ whitespace and comments, splits on commas, coerces strings to numbers (if they n
 if any line ends in a  comma, it is joined to the next line (o records can slit over an times).
 e.g.
 
+     # e.g. reports the number of cells in each line
      while(csv(a,"data.csv")) 
-        print length(a) # reports the number of cells in each line
+        print length(a) 
 
 ```awk
 function csv(a,file,     j,b4, ready,line,x,y) {
@@ -48,9 +49,10 @@ function csv(a,file,     j,b4, ready,line,x,y) {
 Read a csv while ignoring columns whose header names
 include "?". Each such line is stored in `it`. e.g.
 
+    # e.g. reports cells in each line, ignore the "?" columns
     Cols(ing, "data.csv")
     while (Cols_loop(ing)) {
-        print length(ing.it) # reports the number of cells in each line
+        print length(ing.it) 
 
 ```awk
 function Cols(i,file) {
