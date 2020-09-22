@@ -25,10 +25,13 @@ Iterators for walking over files.
 
 ## Basic Csv reader
 
- `csv` complains if the file i missing,,
+ `csv` complains if the file i missing,
 skips empty lines, kills
-whitespace and comments, splits on commas, coerces strings to numbers (if they need it) and,
-if any line ends in a  comma, it is joined to the next line (o records can slit over an times).
+whitespace and comments, splits on commas, coerces strings to numbers (if they need it).
+
+As an added bounus,
+if any line ends in a  comma, it is joined to the next line (so records can slit over N lines).
+
 e.g.
 
      # e.g. reports the number of cells in each line
