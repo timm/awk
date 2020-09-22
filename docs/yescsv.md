@@ -4,9 +4,11 @@
 </h2>
 <p>
    <a    href="http://menzies.us/awk/index">docs</a>
+   :: <a href="http://github.com/timm/awk">code</a>
+   :: <a href="http://menzies.us/awk/index#map">map</a>
    :: <a href="http://menzies.us/awk/index#license">license</a>
    :: <a href="http://menzies.us/awk/index#install">install</a>
-   :: <a href="http://menzies.us/awk/index#contribute">contribute</a>
+   :: <a href="http://menzies.us/awk/index#contribute">contrib</a>
    :: <a href="http://github.com/timm/awk/issues">issues</a>
    :: <a href="http://menzies.us/awk/index#cite">cite</a>
    :: <a href="http://menzies.us/awk/index#contact">contact</a>

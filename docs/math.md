@@ -4,6 +4,7 @@
 </h2>
 <p>
    <a    href="http://menzies.us/awk/index">docs</a>
+   :: <a href="http://github.com/timm/awk">code</a>
    :: <a href="http://menzies.us/awk/index#map">map</a>
    :: <a href="http://menzies.us/awk/index#license">license</a>
    :: <a href="http://menzies.us/awk/index#install">install</a>
@@ -25,7 +26,7 @@ function min(x,y) { return x<y ? x : y    }
 function abs(x)   { return x>0 ? x : -1*x }
 ```
 
-Standard stuff to sample from a Gaussian stuff.
+Standard stuff to sample from a Gaussian: 
 
 ```awk
 function norm(mu,sd,   w,x1,x2) {

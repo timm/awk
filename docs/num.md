@@ -4,6 +4,7 @@
 </h2>
 <p>
    <a    href="http://menzies.us/awk/index">docs</a>
+   :: <a href="http://github.com/timm/awk">code</a>
    :: <a href="http://menzies.us/awk/index#map">map</a>
    :: <a href="http://menzies.us/awk/index#license">license</a>
    :: <a href="http://menzies.us/awk/index#install">install</a>

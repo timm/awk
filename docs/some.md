@@ -4,6 +4,7 @@
 </h2>
 <p>
    <a    href="http://menzies.us/awk/index">docs</a>
+   :: <a href="http://github.com/timm/awk">code</a>
    :: <a href="http://menzies.us/awk/index#map">map</a>
    :: <a href="http://menzies.us/awk/index#license">license</a>
    :: <a href="http://menzies.us/awk/index#install">install</a>
@@ -49,8 +50,6 @@ function _var(i,  lo,hi) { return ( _per(i,.9) - _per(i, .1))/2.6 }
 ```
 Must  update this with https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/1471-2288-14-135
 go with S2 (outliers)
-
-
 
 ```awk
 function _mid(i,  lo,hi) { return _per(i,.5,lo,hi) }
