@@ -7,8 +7,8 @@
    :: <a href="http://github.com/timm/awk">code</a>
    :: <a href="http://menzies.us/awk/index#map">map</a>
    :: <a href="http://menzies.us/awk/index#license">license</a>
-   :: <a href="http://menzies.us/awk/index#install">install</a>
-   :: <a href="http://menzies.us/awk/index#contribute">contrib</a>
+   :: <a href="http://menzies.us/awk/index#install">install</a><br>
+   <a href="http://menzies.us/awk/index#contribute">contrib</a>
    :: <a href="http://github.com/timm/awk/issues">issues</a>
    :: <a href="http://menzies.us/awk/index#cite">cite</a>
    :: <a href="http://menzies.us/awk/index#contact">contact</a>
@@ -56,6 +56,11 @@ Tim Menzies, timm@ieee.org, http://menzies.us
 ## Contribute
 
 TBD
+
+- Indent= 2 tabs
+- Line length = 60 (or if your really need it, 70) characters.
+- Use `i` for `self` (its shorter)
+- Use `ing` for iterators (who we can type `while(loop(ing))...`)
 
 ## License
 
