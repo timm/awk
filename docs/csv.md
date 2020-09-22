@@ -21,7 +21,7 @@
 # CSV Readers
 
 Iterators for walking over files.
-Example of nested iterators (e.g. the `Cols_loop` iterator is  defined using the `csv` itereator).
+
 
 ## Basic Csv reader
 
@@ -84,3 +84,6 @@ function _loop(i,    all,ready,want,where) {
   return 1
 }
 ```
+
+Note that this is an
+example of nested iterators since  the `Cols_loop` iterator is  defined using the `csv` iterator.
