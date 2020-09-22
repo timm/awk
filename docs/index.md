@@ -55,7 +55,7 @@ Tim Menzies, timm@ieee.org, http://menzies.us
 
 ## Contribute
 
-Must right this bit.
+TBD
 
 ## License
 
