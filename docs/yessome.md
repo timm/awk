@@ -8,7 +8,7 @@
    :: <a href="http://menzies.us/awk/index#install">install</a>
    :: <a href="http://menzies.us/awk/index#contribute">contribute</a>
    :: <a href="http://github.com/timm/awk/issues">issues</a>
-   :: <a href="http://menzies.us/awk/index#citation">cite</a>
+   :: <a href="http://menzies.us/awk/index#cite">cite</a>
    :: <a href="http://menzies.us/awk/index#contatct">contact</a>
 <br>
    <img src="https://img.shields.io/badge/language-gawk-orange">
