@@ -46,6 +46,13 @@ function _ok(i)  {
   if (!i.ok) i.ok= asort(i.all) }
 
 function _var(i,  lo,hi) { return ( _per(i,.9) - _per(i, .1))/2.6 }
+```
+Must  update this with https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/1471-2288-14-135
+go with S2 (outliers)
+
+
+
+```awk
 function _mid(i,  lo,hi) { return _per(i,.5,lo,hi) }
 
 function _per(i,p , lo,hi) {

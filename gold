@@ -196,7 +196,7 @@ EOF
 
 mkdir -p $Dir/$Src/assets/img
 
-want=$Dir/$Src/assets/css/style.css
+want=$Dir/$Src/assets/css/style.scss
 mkdir -p $(dirname $want)
 [ -f "$want" ] || cat<<-'EOF'>$want
 ---

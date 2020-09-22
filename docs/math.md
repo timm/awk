@@ -17,19 +17,26 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
+# Misc Maths Stuff
+
 ```awk
 function max(x,y) { return x>y ? x : y    }
 function min(x,y) { return x<y ? x : y    }
 function abs(x)   { return x>0 ? x : -1*x }
+```
 
-function norm(mu,sd,   w,n,x1,x2) {
+Standard _sample from a Gaussian_ stuff:
+
+```awk
+function norm(mu,sd,   w,x1,x2) {
   w  = 1  
-  while (w >= 1) { 
+  do { 
     x1 = 2.0 * rand() - 1  
     x2 = 2.0 * rand() - 1 
     w  = x1*x1 + x2*x2
-  }
+  } while (w>=1)
   w = sqrt((-2.0 * log(w))/w);
   return mu + sd * x1 * w;
 }
+function znorm() { return norm(0,1) }
 ```
