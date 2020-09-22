@@ -37,6 +37,9 @@ doc() {
 }
 docs() {
   local f=`ls $Dir/$Src/*.md 2>/dev/null`
+  if [ -f "$Dir/README.md" ]; then 
+     cp $Dir/README.md $Dir/$Src/index.md
+  fi
   if [ -n "$f" ]; then 
     for g in $f
     do
@@ -75,7 +78,7 @@ done
 
 hello() {
   clear
-  tput bold; tput setaf 3; cat <<-'EOF'
+  tput bold; tput setaf 4; cat <<-'EOF'
 
         .-"-.
        /  ,~a\_

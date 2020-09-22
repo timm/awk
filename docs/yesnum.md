@@ -3,12 +3,13 @@
      The Gawk Object Layer
 </h2>
 <p>
-   <a    href="https://github.com/timm/awk/blob/masterREADME.md#license">license</a>
-   :: <a href="https://github.com/timm/awk/blob/master/README.md#install">install</a>
-   :: <a href="https://github.com/timm/awk/blob/master/README.md#contribute">contribute</a>
+   <a    href="https://menzies.us/awk/index">docs</a>
+   :: <a href="https://menzies.us/awk/index#license">license</a>
+   :: <a href="https://menzies.us/awk/index#install">install</a>
+   :: <a href="https://menzies.us/awk/index#contribute">contribute</a>
    :: <a href="https://github.com/timm/awk/issues">issues</a>
-   :: <a href="https://github.com/timm/awk/blob/master/README.md#citation">cite</a>
-   :: <a href="https://github.com/timm/awk/blob/master/README.md#contatct">contact</a>
+   :: <a href="https://menzies.us/awk/index#citation">cite</a>
+   :: <a href="https://menzies.us/awk/index#contatct">contact</a>
 <br>
    <img src="https://img.shields.io/badge/language-gawk-orange">
    <img src="https://img.shields.io/badge/purpose-ai,se-blueviolet">
@@ -19,26 +20,14 @@
 @include "gold"
 @include "list"
 @include "num"
-```
+@include "col"
 
-# asdas
-
-asdas
-
-- asdad
-- asdasa
-
-```awk
 function okNum(fun,  x,j) {
   Num(x)
-  oo(x)
-  for(j=1;j<=100;j++) {
-    add(x, 6)
-    add(x, 2)
-    add(x, 3)
-    add(x, 1)
-  }
-  print(var(x.some))
+  somed(x)
+  for(j=1;j<=1000;j++) add(x, norm(314,2.7135))
+  ok(fun, abs(mid(x)-mid(x.some)) < 0.5)
+  ok(fun, abs(var(x)-var(x.some)) < 0.1)
 }
 BEGIN {tests()}
 ```
