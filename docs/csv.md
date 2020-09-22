@@ -18,10 +18,12 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
+# CSV Readers
+
 Iterators for walking over files.
 Example of nested iterators (e.g. the `Cols_loop` iterator is  defined using the `csv` itereator).
 
-## Csv reader
+## Basic Csv reader
 
  `csv` complains if the file i missing,,
 skips empty lines, kills
