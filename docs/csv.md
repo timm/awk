@@ -39,11 +39,11 @@ e.g.
         print length(a) 
 
 ```awk
-function csv(a,file,     j,b4, ready,line,x,y) {
+function csv(a,file,     j,b4, ok,line,x,y) {
   file  = file ? file : "-"           
-  ready = getline < file
-  if (ready <0) { print "#E> Missing file ["file"]";exit 1 }
-  if (ready==0) { close(file);return 0 }                                    
+  ok = getline < file
+  if (ok <0) {print "#E> absent "file>"/dev/stderr";exit 1}
+  if (ok==0) {close(file);return 0 }                                    
   line = b4 $0                         
   gsub(/([ \t]*|#.*$)/, "", line)      
   if (!line)       return csv(a,file, line)           
@@ -75,9 +75,9 @@ function Cols(i,file) {
   has(i,"it")
   has(i,"some")
 }
-function _loop(i,    all,ready,want,where) {
-  ready = csv(all,i.file)
-  if (ready<1) return 0
+function _loop(i,    all,ok,want,where) {
+  ok = csv(all,i.file)
+  if (ok<1) return 0
   if (!length(i.some))
     for(want in all)
       if (all[want] !~ THE.ch.skip)
