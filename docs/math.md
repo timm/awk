@@ -25,18 +25,16 @@ function min(x,y) { return x<y ? x : y    }
 function abs(x)   { return x>0 ? x : -1*x }
 ```
 
-Standard _sample from a Gaussian_ stuff:
+Standard stuff to sample from a Gaussian stuff.
 
 ```awk
 function norm(mu,sd,   w,x1,x2) {
-  w  = 1  
   do { 
     x1 = 2.0 * rand() - 1  
     x2 = 2.0 * rand() - 1 
     w  = x1*x1 + x2*x2
   } while (w>=1)
-  w = sqrt((-2.0 * log(w))/w);
-  return mu + sd * x1 * w;
+  return mu + sd * x1 * sqrt((-2.0 * log(w))/w)
 }
 function znorm() { return norm(0,1) }
 ```
