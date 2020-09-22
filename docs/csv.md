@@ -90,5 +90,5 @@ function _loop(i,    all,ok,want,where) {
 }
 ```
 
-Note that this is an
-example of nested iterators since  the `Cols_loop` iterator is  defined using the `csv` iterator.
+This is an
+example of nested iterators (the `Cols_loop` iterator is  defined using the `csv` iterator).
