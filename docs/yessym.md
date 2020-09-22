@@ -17,27 +17,16 @@
 </p>
 
 ```awk
-function push(x,a) { a[length(a)+1] =x;return x }
+@include "gold"
+@include "list"
+@include "sym"
+@include "col"
 
-function o(a,prefix, txt,j,sep) {
-   txt = ""
-   for(j in a) {txt = txt sep a[j];sep=","}
-   return prefix txt
+function okSym(fun,  x,a,j) {
+  Sym(x)
+  split("aaaabbc",a,"")
+  for(j in a) add(x, a[j])
+  ok(fun, abs(1.378 - var(x)) < 0.01)
 }
-function oo(a,prefix,    indent,   i,txt) {
-  txt = indent ? indent : (prefix DOT )
-  if (!isarray(a)) {print(a); return a}
-  ooSortOrder(a)
-  for(i in a)  {
-    if (isarray(a[i]))   {
-      print(txt i"" )
-      oo(a[i],"","|  " indent)
-    } else
-      print(txt i (a[i]==""?"": ": " a[i])) }
-}
-function ooSortOrder(a, i) {
-  for (i in a)
-   return PROCINFO["sorted_in"] =\
-     typeof(i+1)=="number" ? "@ind_num_asc" : "@ind_str_asc"
-}
+BEGIN {tests()}
 ```

@@ -16,28 +16,32 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
-```awk
-function push(x,a) { a[length(a)+1] =x;return x }
+# Symbolic columns
 
-function o(a,prefix, txt,j,sep) {
-   txt = ""
-   for(j in a) {txt = txt sep a[j];sep=","}
-   return prefix txt
+```awk
+@include "some"
+
+function Sym(i) {
+  isa(i,"Sym")
+  has(i,"seen")
+  i.mode=""
+  i.most=0
 }
-function oo(a,prefix,    indent,   i,txt) {
-  txt = indent ? indent : (prefix DOT )
-  if (!isarray(a)) {print(a); return a}
-  ooSortOrder(a)
-  for(i in a)  {
-    if (isarray(a[i]))   {
-      print(txt i"" )
-      oo(a[i],"","|  " indent)
-    } else
-      print(txt i (a[i]==""?"": ": " a[i])) }
+function _var(i) { return _ent(i) }
+function _mid(i) { return i.mode }
+
+function _add1(i,x,     n) {
+  if ("some" in i) add(i.some,x)
+  n = i.seen[x]+1
+  if (n > i.most) {i.most=n; i.mode=x}
+  i.seen[x] = n
 }
-function ooSortOrder(a, i) {
-  for (i in a)
-   return PROCINFO["sorted_in"] =\
-     typeof(i+1)=="number" ? "@ind_num_asc" : "@ind_str_asc"
+
+function _ent(i,      j,e,n) {
+  for(j in i.seen) {
+    n = i.seen[j]
+    if (n>0) 
+      e -= (n/i.n)*log(n/i.n)/log(2)};
+  return e
 }
 ```

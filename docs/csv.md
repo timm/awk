@@ -41,13 +41,25 @@ function csv(a,file,     j,b4, ready,line,x,y) {
     a[j] = x==y? y : x }
   return 1
 }
-function cols(a,out,file,    ready,j,b) {
-  if(!length(a)) 
-      a["use"][1]=1
-  ready = csv(b,file)
+```
+Read a csv's ignoring columns whose header names
+include "?".
+```awk
+function Cols(i,file) {
+  isa(i,"Cols")
+  i.file=file
+  has(i,"it")
+  has(i,"use")
+}
+function _loop(i,    ready,get,put) {
+  ready = csv(a,i.file)
   if (ready<1) return 0
-  if (length(a))
-    for(j in a) out[j] = b[a[j]]
+  if (!length(i.use))
+    for(get in a)
+      if (a[get] !~ THE.ch.skip)
+        i.use[get] = ++put
+  for(get in i.use)
+    i.it[i.use[get]] = a[get]
   return 1
 }
 ```

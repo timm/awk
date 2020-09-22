@@ -29,4 +29,6 @@ BEGIN {
   THE.ch.num      = ":"
   THE.ch.klass    = "!"
 }
+
+function data(f) { return DOT DOT "/data/" f DOT "csv" }
 ```
