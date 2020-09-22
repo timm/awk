@@ -18,7 +18,14 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
-Iterators for walking over files.
+Iterators for walking over files. `csv` complains if the file i missing,,
+skips empty lines, kills
+whitespace and comments, splits on commas, coerces strings to numbers (if they need it) and,
+if any line ends in a  comma, it is joined to the next line (o records can slit over an times).
+e.g.
+
+     while(csv(a,"data.csv")) 
+        print length(a) # reports the number of cells in each line
 
 ```awk
 function csv(a,file,     j,b4, ready,line,x,y) {
@@ -38,24 +45,29 @@ function csv(a,file,     j,b4, ready,line,x,y) {
   return 1
 }
 ```
-Read a csv's ignoring columns whose header names
-include "?".
+Read a csv while ignoring columns whose header names
+include "?". Each such line is stored in `it`. e.g.
+
+    Cols(ing, "data.csv")
+    while (Cols_loop(ing)) {
+        print length(ing.it) # reports the number of cells in each line
+
 ```awk
 function Cols(i,file) {
   isa(i,"Cols")
   i.file = file
   has(i,"it")
-  has(i,"use")
+  has(i,"some")
 }
-function _loop(i,    a,ready,get,put) {
-  ready = csv(a,i.file)
+function _loop(i,    all,ready,want,where) {
+  ready = csv(all,i.file)
   if (ready<1) return 0
-  if (!length(i.use))
-    for(get in a)
-      if (a[get] !~ THE.ch.skip)
-        i.use[get] = ++put
-  for(get in i.use)
-    i.it[i.use[get]] = a[get]
+  if (!length(i.some))
+    for(want in all)
+      if (all[want] !~ THE.ch.skip)
+        i.some[want] = ++where
+  for(want in i.some)
+    i.it[i.some[want]] = all[want]
   return 1
 }
 ```
