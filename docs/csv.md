@@ -18,7 +18,11 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
-Iterators for walking over files. `csv` complains if the file i missing,,
+Iterators for walking over files.
+Example of nested iterators (e.g. the `Cols_loop` iterator is  defined using the `csv` itereator).
+
+
+ `csv` complains if the file i missing,,
 skips empty lines, kills
 whitespace and comments, splits on commas, coerces strings to numbers (if they need it) and,
 if any line ends in a  comma, it is joined to the next line (o records can slit over an times).
