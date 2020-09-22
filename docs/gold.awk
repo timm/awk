@@ -9,6 +9,10 @@ function has( i,k,f,  s) { f=f?f:"List"; s=zap(i,k); @f(i[k]); return s}
 function hasmore(i,f)    { return has(i,"",f) }
 
 #### unit testing
+function crash(x) { 
+   print "E> " x> "/dev/stderr"
+   exit 1
+}
 function ok(f,a,   n) { 
    a ? ++PASS : ++FAIL
    n = int(0.5+100*PASS/(PASS+FAIL+0.00001))"% : " f 

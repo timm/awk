@@ -29,7 +29,7 @@ Iterators for walking over files.
 skips empty lines, kills
 whitespace and comments, splits on commas, coerces strings to numbers (if they need it).
 
-As an added bounus,
+As an added bonus,
 if any line ends in a  comma, it is joined to the next line (so records can slit over N lines).
 
 e.g.
@@ -44,8 +44,8 @@ e.g.
 function csv(a,file,     j,b4, ok,line,x,y) {
   file  = file ? file : "-"           
   ok = getline < file
-  if (ok <0) {print "#E> absent "file>"/dev/stderr";exit 1}
-  if (ok==0) {close(file);return 0 }                                    
+  if (ok <0) { crash("missing "files) }
+  if (ok==0) { close(file);return 0 }                                    
   line = b4 $0                         
   gsub(/([ \t]*|#.*$)/, "", line)      
   if (!line)       return csv(a,file, line)           
