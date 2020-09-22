@@ -16,6 +16,8 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
+Iterators for walking over files.
+
 ```awk
 function csv(a,file,     j,b4, ready,line,x,y) {
   file  = file ? file : "-"           
