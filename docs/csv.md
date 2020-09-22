@@ -39,6 +39,8 @@ e.g.
         print length(a) 
 
 ```awk
+@include "gold.awk"
+
 function csv(a,file,     j,b4, ok,line,x,y) {
   file  = file ? file : "-"           
   ok = getline < file
