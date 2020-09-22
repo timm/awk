@@ -27,7 +27,7 @@ Iterators for walking over files.
 
  `csv` complains if the file i missing,
 skips empty lines, kills
-whitespace and comments, splits on commas, coerces strings to numbers (if they need it).
+whitespace and comments, splits on commas. 
 
 As an added bonus,
 if any line ends in a  comma, it is joined to the next line (so records can slit over N lines).
@@ -40,6 +40,7 @@ e.g.
 
 ```awk
 @include "gold.awk"
+@include "poly.awk"
 
 function csv(a,file,     j,b4, ok,line,x,y) {
   file  = file ? file : "-"           
@@ -51,23 +52,20 @@ function csv(a,file,     j,b4, ok,line,x,y) {
   if (!line)       return csv(a,file, line)           
   if (line ~ /,$/) return csv(a,file, line)           
   split(line, a, ",")                  
-  for(j in a)  {
-    x=a[j]
-    y=a[j]+0
-    a[j] = x==y? y : x }
   return 1
 }
 ```
 
-
 ## Cols reader
 
 Read a csv while ignoring columns whose header names
-include "?". Each such line is stored in `it`. e.g.
+include "?". 
+Coerce strings to numbers (if they need it).
+Resulting  lines are  stored in `it`. e.g.
 
     # e.g. reports cells in each line, ignore the "?" columns
     Cols(ing, "data.csv")
-    while (Cols_loop(ing)) {
+    while (loop(ing)) {
         print length(ing.it) 
 
 ```awk
@@ -77,15 +75,18 @@ function Cols(i,file) {
   has(i,"it")
   has(i,"some")
 }
-function _loop(i,    all,ok,want,where) {
+function _loop(i,    all,ok,want,where, old,new) {
   ok = csv(all,i.file)
   if (ok<1) return 0
   if (!length(i.some))
     for(want in all)
       if (all[want] !~ THE.ch.skip)
         i.some[want] = ++where
-  for(want in i.some)
-    i.it[i.some[want]] = all[want]
+  for(want in i.some) {
+    old = all[want]
+    new = old + 0
+    i.it[i.some[want]] = new==old ? new : old
+  }
   return 1
 }
 ```

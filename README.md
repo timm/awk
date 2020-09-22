@@ -57,6 +57,11 @@ Tim Menzies, timm@ieee.org, http://menzies.us
 
 TBD
 
+- Indent= 2 tabs
+- Line length = 60 (or if your really need it, 70) characters.
+- Use `i` for `self` (its shorter)
+- Use `ing` for iterators (who we can type `while(loop(ing))...`)
+
 ## License
 
 This is free and unencumbered software released into the public domain.
