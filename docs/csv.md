@@ -61,6 +61,7 @@ function csv(a,file,     j,b4, ok,line,x,y) {
 Read a csv while ignoring columns whose header names
 include "?". 
 Coerce strings to numbers (if they need it).
+
 Resulting  lines are  stored in `it`. e.g.
 
     # e.g. reports cells in each line, ignore the "?" columns
