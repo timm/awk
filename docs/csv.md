@@ -1,5 +1,5 @@
 <a name=top>
-<img align=right src="https://raw.githubusercontent.com/timm/awk/master/etc/img/greatauk.jpg" width=200>
+<img align=right src="https://raw.githubusercontent.com/timm/awk/master/etc/img/greatauk.jpg" width=250>
 <h2>
      The Gawk Object Layer
 </h2>
@@ -8,8 +8,8 @@
    :: <a href="http://github.com/timm/awk">code</a>
    :: <a href="http://menzies.us/awk/index#map">map</a>
    :: <a href="http://menzies.us/awk/index#license">license</a>
-   :: <a href="http://menzies.us/awk/index#install">install</a><br>
-   <a href="http://menzies.us/awk/index#contribute">contrib</a>
+   :: <a href="http://menzies.us/awk/index#install">install</a>
+   :: <a href="http://menzies.us/awk/index#contribute">contrib</a>
    :: <a href="http://github.com/timm/awk/issues">issues</a>
    :: <a href="http://menzies.us/awk/index#cite">cite</a>
    :: <a href="http://menzies.us/awk/index#contact">contact</a>
