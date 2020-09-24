@@ -1,5 +1,5 @@
 <a name=top>
-<img align=right src="https://raw.githubusercontent.com/timm/awk/master/etc/img/greatauk.jpg" width=150>
+<img align=right src="https://raw.githubusercontent.com/timm/awk/master/etc/img/goldpuffin.png" width=200>
 <h2>
      The Gawk Object Layer
 </h2>
