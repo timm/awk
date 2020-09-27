@@ -36,13 +36,16 @@ function Some(i, max) {
   i.max = max ? max : THE.some.max
   has(i,"all")
 }
-function _add1(i,x) {
+function _add1(i,x,      pos) {
   if (length(i.all)  < i.max) 
-    _update(i, x, length(i.all) + 1)
+    pos = length(i.all) + 1
   else if (rand() < i.max/i.n) 
-    _update(i, x, int(0.5+length(i.all)*rand()))
+    pos = int(0.5+length(i.all)*rand());
+  if (pos) {
+    i.all[pos]=x
+    i.ok=0 
+  }
 }
-function _update(i,x,k) { i.all[k]=x; i.ok=0 }
 
 function _ok(i)  { 
   if (!i.ok) i.ok= asort(i.all) }
