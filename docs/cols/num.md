@@ -19,23 +19,28 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
+# numeric columns
+
 ```awk
-@include "the"
-@include "poly"
-@include "num"
-@include "some"
+@include "cols/some"
 
-function adds(a,out,fun,    j) {
-  fun = fun?fun:"Num"
-  @fun(out)
-  for(j in a) add(out, a[j])
+function Num(i) {
+  isa(i,"Num")
+  i.hi=-10**32
+  i.lo=10**32
+  i.n=i.sd=i.mu=i.m2=0
 }
+function _var(i) { return i.sd }
+function _mid(i) { return i.mu }
 
-function add(i,x) {
-  if (x != THE.ch.skip)  { i.n++; add1(i,x) }
-  return x
-}
-function somed(i) {
-  has(i,"some","Some")
+function _add1(i, x,     d) {
+  if ("some" in i) add(i.some,x)
+  i.hi  = max(i.hi,x)
+  i.lo  = min(i.lo,x)
+  d     = x - i.mu
+  i.mu += d / i.n
+  i.m2 += d * (x - i.mu) 
+  if (i.n  < 2) i.sd=0  
+  else i.sd = (i.m2 <= 0)?0:(i.m2/(i.n-1))^0.5 
 }
 ```

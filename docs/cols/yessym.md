@@ -21,9 +21,9 @@
 
 ```awk
 @include "gold"
-@include "list"
-@include "sym"
-@include "col"
+@include "lib/list"
+@include "cols/sym"
+@include "cols/col"
 
 function okSym(fun,  x,a,j) {
   Sym(x)

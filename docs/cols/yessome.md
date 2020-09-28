@@ -21,7 +21,7 @@
 
 ```awk
 @include "gold"
-@include "some"
+@include "cols/some"
 
 function okSome1(fun,  n,a,b,j,x) {
   for(n=1;n<=1.5;n+= 0.05) 

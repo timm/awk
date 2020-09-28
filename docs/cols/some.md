@@ -25,9 +25,9 @@ Reservoir Sampling
 
 ```awk
 @include "the"
-@include "list"
-@include "col"
-@include "math"
+@include "lib/list"
+@include "lib/math"
+@include "cols/col"
 
 function Some(i, max) {
   isa(i,"Some")

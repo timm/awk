@@ -20,16 +20,21 @@
 </p>
 
 ```awk
-@include "gold"
-@include "list"
 @include "the"
-@include "poly"
-@include "csv"
+@include "cols/num"
+@include "cols/some"
 
-function okCsv(fun,  n,ing) {
-  Cols(ing, data("weather"))
-  while(loop(ing) )
-    print o(ing.it)
+function adds(a,out,fun,    j) {
+  fun = fun?fun:"Num"
+  @fun(out)
+  for(j in a) add(out, a[j])
 }
-BEGIN {tests()}
+
+function add(i,x) {
+  if (x != THE.ch.skip)  { i.n++; add1(i,x) }
+  return x
+}
+function somed(i) {
+  has(i,"some","Some")
+}
 ```

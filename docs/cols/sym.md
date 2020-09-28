@@ -19,9 +19,32 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
+# Symbolic columns
+
 ```awk
-function add1(i,x, f) { f=i.isa "_add1"; return @f(i,x) }
-function loop(i,   f) { f=i.isa "_loop"; return @f(i) }
-function var(i,    f) { f=i.isa "_var";  return @f(i) }
-function mid(i,    f) { f=i.isa "_mid";  return @f(i) }
+@include "cols/some"
+
+function Sym(i) {
+  isa(i,"Sym")
+  has(i,"seen")
+  i.mode=""
+  i.most=0
+}
+function _var(i) { return _ent(i) }
+function _mid(i) { return i.mode }
+
+function _add1(i,x,     n) {
+  if ("some" in i) add(i.some,x)
+  n = i.seen[x]+1
+  if (n > i.most) {i.most=n; i.mode=x}
+  i.seen[x] = n
+}
+
+function _ent(i,      j,e,n) {
+  for(j in i.seen) {
+    n = i.seen[j]
+    if (n>0) 
+      e -= (n/i.n)*log(n/i.n)/log(2)};
+  return e
+}
 ```

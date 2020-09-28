@@ -39,8 +39,8 @@ e.g.
         print length(a) 
 
 ```awk
-@include "gold.awk"
-@include "poly.awk"
+@include "gold"
+@include "the"
 
 function csv(a,file,     j,b4, ok,line,x,y) {
   file  = file ? file : "-"           

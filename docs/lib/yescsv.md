@@ -21,16 +21,14 @@
 
 ```awk
 @include "gold"
-@include "list"
-@include "num"
-@include "col"
+@include "the"
+@include "lib/list"
+@include "lib/csv"
 
-function okNum(fun,  x,j) {
-  Num(x)
-  somed(x)
-  for(j=1;j<=1000;j++) add(x, norm(314,2.7135))
-  ok(fun, abs(mid(x)-mid(x.some)) < 0.5)
-  ok(fun, abs(var(x)-var(x.some)) < 0.1)
+function okCsv(fun,  n,ing) {
+  Cols(ing, data("weather"))
+  while(loop(ing) )
+    print o(ing.it)
 }
 BEGIN {tests()}
 ```

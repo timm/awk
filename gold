@@ -5,11 +5,11 @@ Dir=$(cd $( dirname "${BASH_SOURCE[0]}" ) && pwd )
 Tmux=$(which tmux)
 Needs="gawk bash"
 
-md2awk() { gawk '
+md2awk() { gawk -v Lib="$Lib" --source '
   BEGIN            { Pre="#" }
   sub(/```awk/,"") { Pre=""  ; print; next}
   sub(/```/,"")    { Pre="# "; print; next}
-  /^@include / { print; next }
+  sub(/^@include "/,"@include \"" Lib "/")  { print; next }
   /^function[ \t]+[A-Z][^\(]*\(/ {
       split($0,a,/[ \t\(]/)
       PREFIX = a[2]
@@ -20,10 +20,18 @@ md2awk() { gawk '
   }' 
 }
 md2awks() {
-  for i in $Dir/$Src/*.md; do 
-    j=$(basename $i .md).awk
-    cat $i | md2awk > $Lib/$j
-  done
+  here=$PWD
+  cp $Dir/$Src/gold.awk $Lib
+  cd $Dir/$Src
+  local dirs=$(find .  -type d)
+  for dir in $dirs; do mkdir -p $Lib/$dir; done
+  local files=$(find .  -name "*.md")
+  if [ -n "$files" ]; then
+    for file in $files; do
+      local d=$(dirname "$file")
+      local stem=$(basename "$file" .md).awk
+      cat $file | md2awk > $Lib/$d/$stem;done;fi
+  cd $here
 }
 
 doc() {
@@ -53,14 +61,15 @@ docs() {
 }
 
 if   [ "$1" == "--md"  ]; then docs; exit;
-elif [ "$1" == "--all" ]; then rm -f $Lib/*; md2awks; exit;
+elif [ "$1" == "--all" ]; then rm -rf $Lib/*; md2awks; exit;
 elif [ -n "$1" ]; then
-  f=$(basename $1 .md).awk
+  f=${1/%.md/.awk}
   shift
   md2awks
+  export AWKPATH="$Lib:$Lib/lib:./:$AWKPATH" 
   if [ -t 0 ]
-  then       AWKPATH="$Lib:./:$AWKPATH" gawk -f $Lib/$f $*
-  else cat -|AWKPATH="$Lib:./:$AWKPATH" gawk -f $Lib/$f $*
+  then       gawk -f $Lib/$f $*
+  else cat -|gawk -f $Lib/$f $*
   fi
   exit
 fi
@@ -102,6 +111,7 @@ EOF
 alias bye="$Tmux kill-session"                # exit
 alias ga='git add *'                          # add to local repo
 alias gg='git pull'                           # update code from web
+alias gold='sh $Dir/gold '                    # ls
 alias gp='ga;git commit -am save;git push;gs' # end-of-day actions
 alias gs='git status'                         # status 
 alias ls='ls -G'                              # ls

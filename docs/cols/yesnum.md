@@ -19,28 +19,18 @@
    <img src="https://img.shields.io/badge/platform-mac,*nux-informational">
 </p>
 
-# numeric columns
-
 ```awk
-@include "some"
+@include "gold"
+@include "lib/list"
+@include "cols/num"
+@include "cols/col"
 
-function Num(i) {
-  isa(i,"Num")
-  i.hi=-10**32
-  i.lo=10**32
-  i.n=i.sd=i.mu=i.m2=0
+function okNum(fun,  x,j) {
+  Num(x)
+  somed(x)
+  for(j=1;j<=1000;j++) add(x, norm(314,2.7135))
+  ok(fun, abs(mid(x)-mid(x.some)) < 0.5)
+  ok(fun, abs(var(x)-var(x.some)) < 0.1)
 }
-function _var(i) { return i.sd }
-function _mid(i) { return i.mu }
-
-function _add1(i, x,     d) {
-  if ("some" in i) add(i.some,x)
-  i.hi  = max(i.hi,x)
-  i.lo  = min(i.lo,x)
-  d     = x - i.mu
-  i.mu += d / i.n
-  i.m2 += d * (x - i.mu) 
-  if (i.n  < 2) i.sd=0  
-  else i.sd = (i.m2 <= 0)?0:(i.m2/(i.n-1))^0.5 
-}
+BEGIN {tests()}
 ```
