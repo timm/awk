@@ -44,7 +44,7 @@ doc() {
               { print ""; print }'  
 }
 docs() {
-  local f=`ls $Dir/$Src/*.md 2>/dev/null`
+  local f=`find $Dir/$Src -name "*.md"`
   if [ -f "$Dir/README.md" ]; then 
      cp $Dir/README.md $Dir/$Src/index.md
   fi
