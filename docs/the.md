@@ -1,7 +1,7 @@
 <a name=top>
 <img align=right width=200 src="https://raw.githubusercontent.com/timm/awk/master/etc/img/miner.png" width=200>
 <h2>
-     The Gawk Object Layer
+     GOLD = The Gawk Object Layer
 </h2>
 <p>
    <a    href="http://menzies.us/awk/index">docs</a>
