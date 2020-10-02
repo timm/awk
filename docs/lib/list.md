@@ -27,16 +27,27 @@ function o(a,prefix, txt,j,sep) {
    for(j in a) {txt = txt sep a[j];sep=","}
    return prefix txt
 }
+```
+
+Recursive indented print of lists, pre-pending `prefix`
+(or nothing, if not supplied).  Array
+keys are sorted according to the their type
+(using ``ooSortOrder``).
+"Secret" array fields (those starting
+with `_` are not displayed.
+
+```awk
 function oo(a,prefix,    indent,   i,txt) {
   txt = indent ? indent : (prefix DOT )
   if (!isarray(a)) {print(a); return a}
   ooSortOrder(a)
-  for(i in a)  {
-    if (isarray(a[i]))   {
-      print(txt i"" )
-      oo(a[i],"","|  " indent)
-    } else
-      print(txt i (a[i]==""?"": ": " a[i])) }
+  for(i in a)  
+    if (i !~ /^_/)  
+      if (isarray(a[i]))   {
+        print(txt i"" )
+        oo(a[i],"","|  " indent)
+      } else
+        print(txt i (a[i]==""?"": ": " a[i])) 
 }
 function ooSortOrder(a, i) {
   for (i in a)
