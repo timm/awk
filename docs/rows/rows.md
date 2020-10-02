@@ -20,7 +20,16 @@
 </p>
 
 ```awk
+@include "gold"
+@include "rows/row"
+@include "rows/meta"
+
 function Rows(i) {
-  isa(i,"Rows")
+  isa(i,"rows","Rows")
+  isa(i,"cols","Meta")
 }
+function _add(i,a) {
+  return length(i.cols) ?  _data(i, a) : add(i.cols,a)  }
+
+function _head(
 ```

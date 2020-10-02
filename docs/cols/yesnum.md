@@ -28,9 +28,9 @@
 function okNum(fun,  x,j) {
   Num(x)
   somed(x)
-  for(j=1;j<=1000;j++) add(x, norm(314,2.7135))
-  ok(fun, abs(mid(x)-mid(x.some)) < 0.5)
-  ok(fun, abs(var(x)-var(x.some)) < 0.1)
+  for(j=1;j<=10000;j++) add(x, norm(314,2.7135))
+  ok(fun 1, abs(mid(x)-mid(x.some)) < 0.5)
+  ok(fun 2, abs(var(x) - var(x.some))/ var(x.some) <0.05)
 }
 BEGIN {tests()}
 ```
