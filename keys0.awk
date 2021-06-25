@@ -1,12 +1,21 @@
 # vim:  ts=2 sw=2 et :
 BEGIN {FS=","}
 
+function o(a,   i,sep) {
+  for(i in a) {printf("%s:%s %s",sep,i,a[i]); sep=", "}}
+
+function have(z) { split("",z,"")}
+function tab(Tab) { 
+    have(txt); have(xs); have(ys); have(all); have(w);
+    have(lo);have(hi); have(rows) }
+
 function read(f, Tab,   x,a) {
   f=f ? f : "-"
-  while((getline x < f) > 0) {split(x,a,",");tab(a,Tab)} }
+  tab(Tab)
+  while((getline x < f) > 0) {split(x,a,",");add(a,Tab)} }
 
-function tab(a,Tab) { 
-  length(header) ? data(a,Tab) : header(a,Tab) }
+function add(a,Tab) { 
+  length(txt) ? data(a,Tab) : header(a,Tab) }
 
 function data(a,Tab,   r,c) {
   r = length(rows)+1
@@ -19,10 +28,10 @@ function data(a,Tab,   r,c) {
 
 function header(a,Tab) {
   for(c in a) {
-    z = header[c] = a[c]
+    txt[c] = z = a[c]
     if (z !~ /\?/) {
       w[c] = z ~ /-/ ? -1   : 1 
-      z ~ /[\+\-\!]/ ? y[c] : x[c]
+      z ~ /[\+\-!]/ ? ys[c] : xs[c]
       if (z ~ /^[A-Z]/) { lo[c] = 10^32; hi[c] = -10^32 } }}}
    
 BEGIN {read("data/auto93.csv")}
