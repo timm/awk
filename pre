@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+cat $1 |
+sed 's/Tab/Header,Data/g' |
+sed 's/Header/header,xs,ys,all,w/g' |
+sed 's/Data/lo,hi,rows/g' > run.awk
+
+shift 
+
+gawk -f run.awk $*
