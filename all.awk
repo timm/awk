@@ -1,60 +1,89 @@
 BEGIN {
-  list(tab)
-   read(tab,"../keys/data/weather.csv")
+  rowsRead(tab,"../keys/data/weather.csv")
   oo(tab["col"])  }
 
-function read(tab,file,   a) {
+#---------------------------------------------
+function Rows(i,a,   name,c,what) {
+  Obj(i)
+  has(i,"row")
+  has(i,"col")
+  has(i,"name")
+  for(c in a) {
+    has(i["col"], c)
+    name= = i{"name"][c]= a[c]
+    what = name~ /^[A-Z]/ ? "Num" : "Sym"
+    @what(i["col"][c], c, name
+    if (name!~ /\?/) {
+      name~ /[!-\+]/ ? i["y"][c]=  1 : i["x"][c] = 1
+      if (name~ /-/)   i["y"][c]= -1} }}
+
+function rows1(i, a) {
+  length(i) ? rowsData(i,a) : Rows(i,a) } 
+
+function rowsData(i,a,    c,x,r) {
+  r = 1+length( tab["row"]  )
+  for(c in a) {
+    x = a[c]
+    i["row"][r][c] = x 
+    col1(i["col"][c],x) }}
+
+function rowsRead(i,file,   a) {
   file = file ? file : "-"
-  while ((getline < file)> 0) { split($0,a,",");sample1(tab,a) }
+  while ((getline < file)> 0) { split($0,a,","); rows1(i,a) }
   close(file) }
 
-function sample1(tab,a) {
-  length(tab) ? data1(tab,a) : sample0(tab,a) } 
- 
-function data1(tab,a,    i,x,r) {
-  r = 1+length( tab["row"]  )
-  for(i=1;i<=length(a);i++) {
-    x = a[i]
-    col1( tab["col"][i], x)
-    tab["row"][r][i] = x }}
+ #function _data1(col,x) {
+ # function tabDist(tab,row1,row2,the) {
+#   d=n=1E-31
+#   for (c in tab[the["cols"]]) 
+#      x=row1[c]; y =row1[c]
+#      d=d+ (x==y=="?") ? 1 : (nump(tab["cols"][c]) ? numDist(
+#      else {
+#        d rowtab["cols"]
+# x
+# }
+#---------------------------------------------
+function Col(i,at, name) {
+  Obj(i)
+  i["n"] = 0
+  i["at"] = at
+  i["name"] = name
+  if (name ~ /?/) i["skip"]=1 }
 
-function sample0(tab,a,   x,i) {
-  has(tab,"row")
-  has(tab,"col")
-  for(i=1;i<=length(a);i++) {
-    has(tab["col"], i)
-    x = a[i]
-    col0(tab["col"][i],i, x)
-    if (x !~ /\?/) {
-      x ~ /[!-\+]/ ? tab["y"][i]=  1 : tab["x"][i] = 1
-      if (x ~ /-/)   tab["y"][i]= -1} }}
+function col1(i, x) {
+  if (x != "?") 
+    if (! ("skip" in i)) {
+      i["n"]++
+      colNump(i) ?  num1(i,x) : sym1(i,x) }}
 
-function col0(col,i, x) {
-  col["n"] = 0
-  col["at"] = i
-  col["name"] = x
-  if (x ~ /?/)   
-    col["skip"]=1
-  else
-   x ~ /^[A-Z]/ ? num0(col)   : sym0(col) }
+function colNump(i) { return "lo" in i}
 
-function num0(col) {
-  col["lo"] =  1E32 
-  col["hi"] = -1E32 
-  col["mu"] =  col["m2"] = col["sd"] = 0 }
+#---------------------------------------------
+function Num(i,at,name) {
+  Col(i,at,name)
+  i["lo"] =  1E32 
+  i["hi"] = -1E32 
+  i["mu"] =  i["m2"] = i["sd"] = 0 }
 
-function sym0(col) {
-  has(col,"seen")
-  col["mode"] = ""
-  col["most"] = 0 }
+function num1(i,x,     d) {
+  i["lo"]  = min(x, i["lo"]) 
+  i["hi"]  = max(x, i["hi"]) 
+  d          = x - i["mu"]
+  i["mu"] += d/i["n"]
+  i["m2"] += d*(x-i["mu"])
+  i["sd"]  = (i["m2"] < 0) ? 0 : ( \
+             (i["n"] < 2) ? 0 : (  \
+              i["m2"]/(i["n"]-1))^0.5) }
 
-function nump(col) { return "lo" in col}
+function numNorm(i,x) {
+   return (x-i["lo"])/(1E-31+ i["hi"] - i["lo"]) }
 
-function col1(col,x) {
-  if (x != "?") {
-    col["n"]++
-    if (! ("skip" in col))
-      nump(col) ?  num1(col,x) : sym1(col,x) }}
+#---------------------------------------------
+function Sym(i,at,name) {
+  Col(i,at,name)
+  has(i,"seen")
+  i["mode"] = ""
+  i["most"] = 0 }
 
 function sym1(col,x,     old,new) {
   old = x in col["seen"] ? col["seen"][x] : 0
@@ -63,32 +92,11 @@ function sym1(col,x,     old,new) {
     col["most"]  = new
     col["mode"] = x}}
 
-function num1(col,x,     d) {
-  col["lo"]  = min(x, col["lo"]) 
-  col["hi"]  = max(x, col["hi"]) 
-  d          = x - col["mu"]
-  col["mu"] += d/col["n"]
-  col["m2"] += d*(x-col["mu"])
-  col["sd"]  = (col["m2"] < 0) ? 0 : ( \
-               (col["n"]  < 2) ? 0 : (  \
-               col["m2"]/(col["n"]-1))^0.5) }
-
-function norm(col,x) {
-   return (x-col["lo"])/(1E-31+ col["hi"] - col["lo"]) }
-
-function tabDist(tab,row1,row2,the) {
-  d=n=1E-31
-  for (c in tab[the["cols"]]) 
-     x=row1[c]; y =row1[c]
-     d=d+ (x==y=="?") ? 1 : (nump(tab["cols"][c]) ? numDist(
-     else {
-       d rowtab["cols"]
-x
-}
+#---------------------------------------------
 function min(x,y) { return x<y ? x : y }
 function max(x,y) { return x>y ? x : y }
 function has(a,i) { a[i][0]; delete a[i][0] }
-function list(a) { split("",a,"") }
+function Obj(a)  { split("",a,"") }
 
 function oo(x,p,pre, i,txt) {
   txt = pre ? pre : (p DOT)
@@ -105,4 +113,3 @@ function ooSortOrder(x, i) {
     return PROCINFO["sorted_in"] =\
       typeof(i+1)=="number" ? "@ind_num_asc" : "@ind_str_asc"
 }
-
