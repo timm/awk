@@ -3,14 +3,16 @@
 
 BEGIN {
   DOT=sprintf("%c",46)
+  Obj(tab)
+  print(1)
   rowsRead(tab,DOT DOT "/keys/data/weather"DOT"csv")
-  oo(tab["col"])  }
+  oo(tab.col)  }
 
 #---------------------------------------------
 function Rows(i,a,   name,c,what) {
   Obj(i)
   i.is="rows"
-  has(i,"row")
+  has(i,"row") # 222
   has(i,"col")
   has(i,"name")
   for(c in a) {
@@ -23,17 +25,19 @@ function Rows(i,a,   name,c,what) {
       name~ /[!-\+]/ ? i.y[c]=  1 : i.x[c] = 1
       if (name~ /-/)   i.y[c]= -1 }}}
 
-function rows(i, a) {
+function rows(i, a) {1
+  print(length(i))
   length(i) ? _rows(i,a) : Rows(i,a) } 
 
-function _rows(i,a,    c,x,r) {
+function _rows(i,a,    c,x,r,y) {
   r = 1 + length( tab["row"]  )
-  for(c in a) 
-    i.row[r][c] = colAdd(i.col[c], a[x])}
+  print("("a[1]")")
+  for(c in a)  {
+    i.row[r][c] = y= colAdd(i.col[c], a[x]); print y }}
 
-function rowsRead(i,file,   a) {
+function rowsRead(i,file,   a,n) {
   file = file ? file : "-"
-  while ((getline < file)> 0) { split($0,a,","); rows(i,a) }
+  while ((getline < file)> 0) { split($0,a,","); print(++n); rows(i,a) }
   close(file) }
 
  #function _data1(col,x) {
@@ -77,6 +81,7 @@ function Num(i,at,name) {
   i.mu =  i.m2 = i.sd = 0 }
 
 function numAdd(i,x,     d) {
+  x += 0
   if(x< i.lo) i.lo = x
   if(x> i.hi) i.hi = x
   d     = x - i.mu
@@ -84,7 +89,8 @@ function numAdd(i,x,     d) {
   i.m2 += d*(x-i.mu)
   i.sd  = (i.m2 < 0) ? 0 : ( \
           (i.n  < 2) ? 0 : (  \
-           i.m2/(i.n-1))^0.5) }
+           i.m2/(i.n-1))^0.5) 
+  return x }
 
 function norm(i,x) {
    return (x-i.lo)/(i.hi - i.lo +1E-31) }
@@ -101,7 +107,8 @@ function symAdd(col,x,     old,new) {
   new = col.seen[x] = 1 + old
   if (new  > col.most) {
     col.most  = new
-    col.mode = x }}
+    col.mode = x }
+  return x}
 
 #---------------------------------------------
 function has(a,i) { a[i][0]; delete a[i][0] }
