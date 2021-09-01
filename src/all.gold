@@ -33,7 +33,7 @@ function rows(i, a) {1
 function _rows(i,a,    c,x,r,y) {
   r = 1 + length( i["row"]  )
   for(c in a)  
-    i.row[r][c] = y= colAdd(i.col[c], a[c]);  y }
+    i.row[r][c] = colAdd(i.col[c], a[c]) } 
 
 function rowsRead(i,file,   a,n) {
   file = file ? file : "-"
@@ -134,5 +134,7 @@ function _ooOrder(x,   i) {
       typeof(i+1)=="number" ? "@ind_num_asc" : "@ind_str_asc" }
 
 function rogues(    s) {
-  for(s in SYMTAB) if (s ~ /^[A-Z][a-z]/) print "#W> Global " s>"/dev/stderr"
-  for(s in SYMTAB) if (s ~ /^[_a-z]/    ) print "#W> Rogue: " s>"/dev/stderr" }
+  for(s in SYMTAB) 
+    if (s ~ /^[A-Z][a-z]/) print "#W> Global " s>"/dev/stderr"
+  for(s in SYMTAB) 
+     if (s ~ /^[_a-z]/    ) print "#W> Rogue: " s>"/dev/stderr" }
