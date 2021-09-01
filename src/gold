@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-echo $1
-
+mkdir -p .gold
 for f in *.gold; do
   g=${f%.*}.awk
   cat $f | gawk '
     {print gensub(/\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/,"[\"\\1\\2\"]","g", $0)}
-  ' > $g
+  ' > .gold/$g
 done
 
 if [ -f "$1" ]; then
   f=$1
   g=${f%.*}.awk
   shift 
-  if   [ -t 0 ]
-  then         gawk -f $g $@
-  else cat - | gawk -f $g $@
+  if [ -t 0 ]
+  then         AWKPATH=".gold:$AWKPATH" gawk -f $g $@
+  else cat - | AWKPATH=".gold:$AWKPATH" gawk -f $g $@
   fi
 fi
