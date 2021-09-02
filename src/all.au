@@ -1,18 +1,15 @@
-#!/usr/bin/env ./gold
 # vim: filetype=awk : 
-BEGIN {  main()  }
+BEGIN {   main()  }
 
 function main(   tab) {
-  rowsRead(tab, data("weather"))
+  rowsRead(tab, dot("@@/data/weather@csv"))
   oo(tab)
   rogues()  }
-
-function data(f) {return sprintf("%c%c/data/%s%ccsv", 46,46,f,46)}
 
 function Rows(i,a,   name,c,what) {
   Obj(i)
   i.Is="rows"
-  has(i,"row") # 222
+  has(i,"row") 
   has(i,"col")
   has(i,"name")
   for(c in a) {
@@ -24,15 +21,15 @@ function Rows(i,a,   name,c,what) {
       name~ /[!-\+]/ ? i.y[c]=  1 : i.x[c] = 1
       if (name~ /-/)   i.y[c]= -1 }}}
 
-function rows(i, a) {1
+function rows(i, a) {
   "col" in i ? _rows(i,a) : Rows(i,a) } 
 
 function _rows(i,a,    c,x,r,y) {
-  r = 1 + length( i["row"]  )
+  r = 1 + length( i.row )
   for(c in a)  
     i.row[r][c] = col(i.col[c], a[c]) } 
 
-function rowsRead(i,file,   a,n) {
+function rowsRead(i,file,   a) {
   file = file ? file : "-"
   while ((getline < file)> 0) { 
     gsub(/([ \t\r]*|#.*)/,"")
@@ -111,6 +108,7 @@ function symAdd(col,x,     old,new) {
   return x}
 
 #---------------------------------------------
+function dot(s)   { gsub(/@/,sprintf("%c",46),s); return s}
 function has(a,i) { a[i][0]; delete a[i][0] }
 function Obj(a)   { split("",a,"") }
 
