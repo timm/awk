@@ -3,26 +3,23 @@
 BEGIN {  main()  }
 
 function main(   tab) {
-  rowsRead(tab, dataFile("auto93"))
+  rowsRead(tab, data("weather"))
   oo(tab)
-  rogues()  
-}
+  rogues()  }
 
-function dataFile(f) { 
-  return sprintf("%c%c/%c%c/keys/data/%s%ccsv",
-                 46,46,46,46,f,46)}
+function data(f) {return sprintf("%c%c/data/%s%ccsv", 46,46,f,46)}
 
-#---------------------------------------------
 function Rows(i,a,   name,c,what) {
   Obj(i)
-  i.is="rows"
+  i.Is="rows"
   has(i,"row") # 222
-  has(i,"name")
   has(i,"col")
-  for(c in a) has(i.col,c)
+  has(i,"name")
   for(c in a) {
     name = i.name[c]= a[c]
-    column(i.col[c],c,name)
+    has(i.col,c)
+    what = name ~ /?/ ? "Skip" : (name ~ /^[A-Z]/ ? "Num" : "Sym")
+    @what(i.col[c], c, name) 
     if (name !~ /\?/) {
       name~ /[!-\+]/ ? i.y[c]=  1 : i.x[c] = 1
       if (name~ /-/)   i.y[c]= -1 }}}
@@ -33,11 +30,14 @@ function rows(i, a) {1
 function _rows(i,a,    c,x,r,y) {
   r = 1 + length( i["row"]  )
   for(c in a)  
-    i.row[r][c] = colAdd(i.col[c], a[c]) } 
+    i.row[r][c] = col(i.col[c], a[c]) } 
 
 function rowsRead(i,file,   a,n) {
   file = file ? file : "-"
-  while ((getline < file)> 0) { split($0,a,","); rows(i,a) }
+  while ((getline < file)> 0) { 
+    gsub(/([ \t\r]*|#.*)/,"")
+    split($0,a,",")
+    rows(i,a) }
   close(file) }
 
  #function _data1(col,x) {
@@ -51,37 +51,33 @@ function rowsRead(i,file,   a,n) {
 # x
 # }
 #---------------------------------------------
-function add(i,x,f) {f=i.is"Add"; return @f(i,x) }
+function add(i,x,f) {f=i.Is"Add"; return @f(i,x) }
 #---------------------------------------------
 function Col(i,at, name) {
   Obj(i)
-  i.is="col"
+  i.Is="col"
   i.n = 0
   i.at = at
   i.name = name }
 
-function column(i, at, name,      what) {
-  what = (name ~ /?/)     ? "Skip" : ( \
-          name ~ /^[A-Z]/ ? "Num"  : "Sym")
-  @what(i,at, name) }
-
-function colAdd(i, x) {
+function col(i, x) {
   if (x != "?") {
       i.n++
       x = add(i,x) }
   return x }
 
 #---------------------------------------------
-function Skip(i,at,name) { Col(i,at,name); i.is="skip" }
+function Skip(i,at,name) { Col(i,at,name); i.Is="skip" }
 
 function skipAdd(i,x) { return x }
 
 #---------------------------------------------
 function Num(i,at,name) {
   Col(i,at,name)
-  i.is = "num"
+  i.Is = "num"
   i.lo =  1E32 
   i.hi = -1E32 
+  i.w  = name ~ /-$/ ? -1 : 1
   i.mu =  i.m2 = i.sd = 0 }
 
 function numAdd(i,x,     d) {
@@ -101,7 +97,7 @@ function norm(i,x) {
 #---------------------------------------------
 function Sym(i,at,name) {
   Col(i,at,name)
-  i.is="sym"
+  i.Is="sym"
   has(i,"seen")
   i.mode = ""
   i.most = 0 }
