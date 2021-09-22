@@ -3,7 +3,7 @@
 BEGIN {  main()  }
 
 function main(   tab) {
-  rowsRead(tab, data("weather"))
+  rowsRead(tab, data("auto93"))
   oo(tab)
   rogues()  }
 
