@@ -5,15 +5,16 @@ for f in *.$it; do
   g=${f%.*}.awk
   cat $f | gawk '
     {print gensub(/\.([^0-9\\*\\$\\+])([a-zA-Z0-9_]*)/,"[\"\\1\\2\"]","g", $0)}
-  ' > .$it/$g
+  ' 
+#> .$it/$g
 done
 
-if [ -f "$1" ]; then
-  f=$1
-  g=${f%.*}.awk
-  shift 
-  if [ -t 0 ]
-  then         AWKPATH=".$it:$AWKPATH" gawk -f $g $@
-  else cat - | AWKPATH=".$it:$AWKPATH" gawk -f $g $@
-  fi
-fi
+# if [ -f "$1" ]; then
+#   f=$1
+#   g=${f%.*}.awk
+#   shift 
+#   if [ -t 0 ]
+#   then         AWKPATH=".$it:$AWKPATH" gawk -f $g $@
+#   else cat - | AWKPATH=".$it:$AWKPATH" gawk -f $g $@
+#   fi
+# fi
