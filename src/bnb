@@ -1,0 +1,90 @@
+#!/usr/bin/env gawk -f
+# brknbad.lua: explore the world better, explore the world for good.
+# (c) 2022, Tim Menzies
+# 
+#      .-------.
+#      | Ba    | Bad <----.  planning= (better - bad)
+#      |    56 |          |  monitor = (bad - better)
+#      .-------.------.   |
+#              | Be   |   v
+#              |    4 | Better
+#              .------.
+# 
+# USAGE:
+#   ./bnb [OPTIONS]
+# 
+# OPTIONS:
+#   -bins  -b   max. number of bins            = 16
+#   -cohen -c   cohen                          = .35
+#   -goal  -g   goal                           = recurrence-events
+#   -K     -K   manage low class counts        = 1
+#   -M     -M   manage low evidence counts     = 2
+#   -seed  -S   seed                           = 10019
+#   -wait  -w   wait                           = 10
+# 
+# OPTIONS (other):
+#   -dump  -d   dump stack on error, then exit = false
+#   -file  -f   file name                      = ../etc/data/breastcancer.csv
+#   -help  -h   show help                      = false
+#   -todo  -t   start up action                = nothing
+
+function coerce(x)         { return x+0==x ?  x+0: x }
+function rogues(j)         { for (j in SYMTAB) if (j ~ /^[a-z]/) print("??",j) }
+function para1(f,  x)      { FS="\n"; RS=""; getline x < f; close(f); return x }
+
+function keysort(a,k)      { _keysort = k; return asort(a,a,"keysort1") }
+function keysort1(a,x,b,y) { return compare(x[_keysort] + 0, y[ _keysort] + 0) }
+function compare(x,y)      { return x<y ? -1 : {x==y ? 0 : 1) }
+function per(a,p)          { return int(length(a)*(p ? p : .5)) }
+function sdx(a,  n)        { n=length(a); return (a[int(.9*n)].x - a[int(.1*n)].x)/2.56 }
+
+functtion ent(a, n,e) { 
+  for(j in a) n += a[j]; for(j in a) e -= a[j]/n*log(a[j]/n)/log(2) ; return e }
+
+function settings(out,     a1,a2,j) {
+  split(para1(ENVIRON["_"]),a1,"\n") 
+  for(j in a1) 
+    if (a1[j] ~ /^#\s+-/) {
+      split(gensub(/^#\s+-(\S+)\s.+\s(\S+)$/,"\\1::\\2","g",a1[j]),a2,"::")
+      out[a2[1]] = coerce(a2[2])}}
+
+function bins(xys,ref,out,    j) {
+  keysort(xys,"x")
+  bins1(xys,1,length(xys),ref, sdx(xys)*the.cohen, length(xys)/the["bins"], -Big, out)
+  for(j in out) out[i]["id"] = j
+  out[length(out)]["hi"] = Big }
+ 
+function bins1(xys,lo,hi,refs,cohen,min,b4,out,   
+              lhs,hrs,cut,div,xpect,xy,n1,n2,x,y) {
+  for(j=lo; j<=hi; j++) rhs[xys[j]["x"]]++
+  div = ent(rhs)
+  if (hi-lo > 2* min) {
+    for(j=lo;j<=hi;j++) {
+      x = xys[j]["x"]
+      y = xys[j]["y"]
+      lhs[y]++
+      rhs[y]--
+      n1 = j - lo + 1
+      n2 = hi - j
+      if (n1>min && n2>min && x != xys[j+1].x && \
+          x-xys[lo].x > cohen && xys[hi].x-x > cohen) {
+         xpect = (n1*ent(rhs) + n2*ent(rhs))/(n1+n2)
+         if (xpect < div) {
+              cut=j; div=xpect}}}}
+  if (cut) 
+     b4 = bins(xys, lo,    cut, refs,cohen,min,b4,out)
+     b4 = bins(xys, cut+1, hi,  refs,cohen,min,b4,out)
+  else {
+     m=length(out)+1
+     out[m]["ref"] = ref
+     out[m]["lo"]  = h4
+     out[m]["hi"]  = xys[hi]["x"]
+     out[m]["n"]   = hi - lo + 1
+     out[m]["div"] = div
+     b4 = out[m]["hi"] }
+  return b4 }
+  
+  
+   
+   
+BEGIN { Big=1E32; settings(the); rogues()}
