@@ -1,0 +1,20 @@
+#!/usr/bin/env -f gawk
+# vim: filetype=awk :
+BEGIN {FS=",", big=1E32}
+
+NR==1{
+  for(i=1;i<=NR;i++) if ($i ~ /^[A-Z]/) { hi[i]=-bg; lo[i]=big }
+  print $0 "\n" ; next}
+
+{ gsub(/[ \t]*/,"")
+  for(i=1;i<=NR;i++) D[NR-1][i]=$i }
+
+END {for(i=1;i<NR;i++) {
+      for(j=1;j<=NF;j++) printf("%s, ",D[i][j]); print D[i][$NF];
+      for(j=1;j<=NF;j++) printf("%s, ",norm(j,D[i][j])); print norm(j,D[i][$NF])
+      print ""}}
+
+function norm(c,x) {
+  if (x=="?") return x
+  return c in lo ? (x-lo[c])/(hi[c]-lo[c]) : x }
+  
