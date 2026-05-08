@@ -24,7 +24,7 @@ demo:
 demo-raw:
 	$(GAWK) $(CFG) $(DATA)
 
-demo20:
+tree20:
 	@$(SHUF); for i in $$(seq 1 20); do \
 	  $(GAWK) $(CFG20) <(shuf $$i $(DATA)); \
 	done | gawk -f metrics.awk
@@ -38,4 +38,4 @@ show:
 	@for f in dot.awk numsym.awk data.awk tree.awk bayes.awk; do \
 	  echo "# === $$f ==="; dot $$f; done
 
-.PHONY: demo demo-raw demo20 nb20 show
+.PHONY: demo demo-raw tree20 nb20 show

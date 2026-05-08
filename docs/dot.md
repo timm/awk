@@ -21,7 +21,7 @@ Decision-tree and naive-Bayes classifiers, sourced via a tiny `dot` shell wrappe
 ```sh
 cd dot
 make demo      # tree on default DATA
-make demo20    # 20-shuffle tree + metrics
+make tree20    # 20-shuffle tree + metrics
 make nb20      # 20-shuffle naive-Bayes + metrics
 make show      # cat all source files via dot wrapper
 ```
