@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dot &mdash; Example</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dot">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dot</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="hello.html">Hello</a>
+      <a href="example.html">Example</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Example: stats.awk</h1>
+<p class="lead">Per-column running stats on any CSV. Mean/stdev for numeric, mode/entropy for symbolic. Same <code>add()</code> call, polymorphic dispatch.</p>
+
+<div class="glossary">
+  <h4>Quick glossary</h4>
+  <dl>
+    <dt>gawk</dt><dd>GNU awk. Adds indirect calls, multi-dim arrays, <code>FUNCTAB</code>, <code>SYMTAB</code>.</dd>
+    <dt>FUNCTAB</dt><dd>gawk built-in: array of all defined function names. Tested with <code>(name in FUNCTAB)</code>.</dd>
+    <dt>SYMTAB</dt><dd>gawk built-in: array of all global variable names. Used by <code>rogues()</code> to detect leaks.</dd>
+    <dt>@fn(...)</dt><dd>indirect function call. <code>fn = "num_add"; @fn(it,x)</code> calls <code>num_add(it,x)</code>.</dd>
+    <dt>&lt;(cmd)</dt><dd>process substitution (bash). <code>cmd</code>'s output appears as a temporary file path.</dd>
+    <dt>arg slot</dt><dd>awk has no <code>local</code> keyword. Locals declared as extra args after the real ones, separated by extra spaces.</dd>
+  </dl>
+</div>
+
+<h2>The program</h2>
+<p><code>stats.awk</code> reads any CSV. UPPERCASE column names &rarr; numeric, lowercase &rarr; symbolic. One pass, prints summary at end.</p>
+
+<pre><code class="language-c">BEGIN { FS = " *, *" }
+
+NR == 1 { header(); next }
+      { ingest() }
+
+function header(    i) {
+  for (i = 1; i &lt;= NF; i++) {
+    NAME[i] = $i
+    COL[i]  = new($i ~ /^[A-Z]/ ? "num" : "sym") } }
+
+function ingest(    i) {
+  for (i = 1; i &lt;= NF; i++) add(COL[i], $i, 1) }
+
+END { report(); rogues() }
+
+function report(    i, c) {
+  printf "%-22s %6s %12s %12s\n", "column", "n", "mid", "spread"
+  for (i = 1; i &lt;= length(NAME); i++) {
+    c = COL[i]
+    if (.c.is == "num") printf "%-22s %6d %12.3f %12.3f\n", NAME[i], .c.n, mid(c), var(c)
+    else                printf "%-22s %6d %12s %12.3f\n", NAME[i], .c.n, mid(c), var(c) } }</code></pre>
+
+<h2>Input</h2>
+<p>Heart-disease CSV. Mix of numeric (UPPER) and symbolic (lower) columns:</p>
+<pre><code class="language-bash">AGE,sex,cp,TRESTBPS,CHOL,fbs,restecg,THALACH,exang,OLDPEAK,slope,CA,thal,num!
+63,male,typ_angina,145,233,t,left_vent_hyper,150,no,2.3,down,0,fixed_defect,&lt;50
+67,male,asympt,160,286,f,left_vent_hyper,108,yes,1.5,flat,3,normal,&gt;50_1</code></pre>
+
+<h2>Run</h2>
+<pre><code class="language-bash">cd dot
+make stats DATA=$HOME/gits/moot/classify/heart.c.csv</code></pre>
+
+<p>Expands to:</p>
+<pre><code class="language-bash">gawk \
+  -f &lt;(dot dot.awk) \
+  -f &lt;(dot numsym.awk) \
+  -f &lt;(dot stats.awk) \
+  $HOME/gits/moot/classify/heart.c.csv</code></pre>
+
+<h2>Output</h2>
+<pre><code class="language-bash">column                      n          mid       spread
+AGE                       303       54.366        9.082
+sex                       303         male        0.624
+cp                        303       asympt        1.206
+TRESTBPS                  303      131.624       17.538
+CHOL                      303      246.264       51.831
+fbs                       303            f        0.420
+restecg                   303       normal        0.754
+THALACH                   303      149.647       22.905
+exang                     303           no        0.632
+OLDPEAK                   303        1.040        1.161
+slope                     303           up        0.897
+CA                        298        0.674        0.938
+thal                      301       normal        0.864
+num!                      303          &lt;50        0.689</code></pre>
+
+<p><code>mid</code> = mean (num) or mode (sym). <code>spread</code> = stdev (num) or entropy (sym).</p>
+
+<h2>What just happened</h2>
+<ol style="margin-left: 24px;">
+  <li><code>header()</code> reads first row, calls <code>new("num")</code> or <code>new("sym")</code> per column based on first-letter case. Each call returns a fresh ID and seeds <code>HEAP[id]</code>.</li>
+  <li>Every subsequent row: <code>ingest()</code> calls <code>add(COL[i], $i, 1)</code>. Same call dispatches to <code>num_add</code> or <code>sym_add</code> via <code>.it.is</code>.</li>
+  <li><code>num_add</code> updates Welford's running mean+variance. <code>sym_add</code> increments a counts table.</li>
+  <li><code>report()</code> calls <code>mid()</code> and <code>var()</code> &mdash; both polymorphic. <code>num_mid</code> returns mean; <code>sym_mid</code> returns mode. <code>num_var</code> returns stdev; <code>sym_var</code> returns entropy.</li>
+  <li><code>rogues()</code> at end reports any lowercase global leaked. Should print nothing.</li>
+</ol>
+
+<h2>Variants</h2>
+<pre><code class="language-bash">make hello   # 12-line single-type running mean
+make show    # print all source files post-prep</code></pre>
+
+<h2>Next</h2>
+<p>To use these types for actual machine learning &mdash; decision trees, naive Bayes &mdash; see <a href="../dotlearn/example.html">dotlearn</a>.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotlearn &mdash; ML on top of dot</title>
+<meta name="description" content="dotlearn is a tiny gawk machine-learning toolkit: tree, naive Bayes, active learning.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotlearn">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotlearn</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="example.html">Examples</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Streaming machine learning in plain gawk.</h1>
+    <p class="tagline">
+      <strong>dotlearn</strong> sits on top of <a href="../dot/index.html">dot</a>.
+      Three apps, one shape: read CSV, build column stats, train, evaluate.
+      No Python, no JVM, no dependencies.
+    </p>
+
+    <div class="compare" style="margin-top: 32px;">
+      <div>
+        <h4>tree</h4>
+        <p style="color: var(--fg-soft); margin: 0 0 12px;">
+          Decision / regression tree. Binary cuts, balance filter, info-gain
+          splits. Same code does classification (sym y) and regression (num y).
+        </p>
+        <p style="margin: 0;"><code>make tree</code></p>
+      </div>
+      <div>
+        <h4>nb</h4>
+        <p style="color: var(--fg-soft); margin: 0 0 12px;">
+          Naive Bayes classifier. Per-class column stats, m-estimate / k-estimate
+          smoothing, log-likelihood prediction. Streaming: train then test in one pass.
+        </p>
+        <p style="margin: 0;"><code>make nb</code></p>
+      </div>
+    </div>
+
+    <div class="compare" style="margin-top: 14px; grid-template-columns: 1fr;">
+      <div>
+        <h4>acquire</h4>
+        <p style="color: var(--fg-soft); margin: 0 0 12px;">
+          Active learning. Shuffle, split half/half. Warm-start with 4 labels.
+          Acquire 50 more by centroid distance (best vs rest). Train tree.
+          Predict test set. Top-5 picks scored against full-data percentiles.
+          On auto93: <strong>~95 wins</strong> with 14% of data labelled.
+        </p>
+        <p style="margin: 0;"><code>make acquire</code></p>
+      </div>
+    </div>
+
+    <ul class="bullets" style="margin-top: 28px;">
+      <li><strong>~600 lines</strong> of gawk total across all three apps + shared infra.</li>
+      <li><strong>Streaming.</strong> One pass through the data. Train + test in a single pipeline.</li>
+      <li><strong>Header sigils.</strong> <code>!</code> = class, <code>+</code>/<code>-</code> = max/min goal, UPPER = numeric.</li>
+    </ul>
+
+    <p style="margin-top: 24px;">
+       <a href="tour.html">Take the tour</a> &middot;
+       <a href="example.html">Examples</a> &middot;
+       <a href="manual.html">Manual</a>
+    </p>
+    <p style="margin-top: 12px; color: var(--fg-soft);">
+      First time? Start with <a href="../dot/tour.html">the dot tour</a> &mdash;
+      dotlearn assumes you know <code>new()</code>, <code>add()</code>, and
+      the <code>.it.field</code> sugar.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

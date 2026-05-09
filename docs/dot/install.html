@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dot &mdash; Install</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dot">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dot</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="hello.html">Hello</a>
+      <a href="example.html">Example</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Install</h1>
+<p class="lead">Two requirements: <code>gawk</code> and <code>bash</code>.</p>
+
+<h2>Requirements</h2>
+<table>
+  <tr><th>Tool</th><th>Version</th><th>Why</th></tr>
+  <tr><td><code>gawk</code></td><td>&ge; 4.x</td><td>indirect calls (<code>@fn</code>), <code>FUNCTAB</code>, <code>SYMTAB</code></td></tr>
+  <tr><td><code>bash</code></td><td>&ge; 4.x</td><td>process substitution <code>&lt;(...)</code></td></tr>
+  <tr><td><code>make</code></td><td>any</td><td>demo targets</td></tr>
+</table>
+
+<p><strong>Note on gawk 5.4.0:</strong> the preprocessor avoids <code>gensub(...,"g")</code> due to a bug where the second match's captures come back empty. A <code>match</code>/<code>substr</code> loop is used instead.</p>
+
+<h2>macOS</h2>
+<pre><code class="language-bash">brew install gawk</code></pre>
+<p>Default <code>/bin/sh</code> on macOS is bash 3.x &mdash; too old for <code>&lt;(...)</code>. Run from <code>bash</code> or <code>zsh</code>, not <code>sh</code>.</p>
+
+<h2>Linux</h2>
+<pre><code class="language-bash">sudo apt install gawk    # debian/ubuntu
+sudo dnf install gawk    # fedora</code></pre>
+
+<h2>Clone &amp; run</h2>
+<pre><code class="language-bash">git clone https://github.com/timm/awk
+cd awk/dot
+make stats DATA=path/to/data.csv</code></pre>
+
+<p>The <code>dot</code> wrapper resolves its own location, so once it's on <code>PATH</code> it works from any directory:</p>
+<pre><code class="language-bash">export PATH=$PWD:$PATH
+dot dot.awk     # print rewritten file</code></pre>
+
+<h2>Dev shell</h2>
+<p>From repo root:</p>
+<pre><code class="language-bash">make sh</code></pre>
+<p>Launches an interactive bash with <code>etc/bash.rc</code> sourced &mdash; aliases, prompt with branch indicator, and <code>~/.local/bin</code> on <code>PATH</code>.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

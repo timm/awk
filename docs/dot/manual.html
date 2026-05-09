@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dot &mdash; Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dot">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dot</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="hello.html">Hello</a>
+      <a href="example.html">Example</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="layout">
+
+<aside class="toc">
+  <h4>Manual</h4>
+  <ul>
+    <li class="group">Syntax</li>
+    <li><a href="#prep">Preprocessor</a></li>
+    <li class="group">Runtime</li>
+    <li><a href="#new">new</a></li>
+    <li><a href="#free">out / free</a></li>
+    <li><a href="#arr">arr</a></li>
+    <li><a href="#dispatch">dispatch</a></li>
+    <li class="group">Types</li>
+    <li><a href="#num">num</a></li>
+    <li><a href="#sym">sym</a></li>
+    <li class="group">Style</li>
+    <li><a href="#conv">conventions</a></li>
+    <li><a href="#rogues">rogues</a></li>
+    <li class="group">Reference</li>
+    <li><a href="#files">files</a></li>
+    <li><a href="#limits">limitations</a></li>
+  </ul>
+</aside>
+
+<div class="content">
+
+<h1>Manual</h1>
+<p class="lead">The preprocessor, runtime, types, and conventions.</p>
+
+<section id="prep">
+  <h2>Preprocessor</h2>
+  <p>Two rewrites applied to source before gawk sees it. A "value-char" is anything in <code>[A-Za-z0-9_])]</code>. So <code>it.x</code> rewrites; <code>.x</code> at line start does not.</p>
+  <div class="expand-pair">
+    <div>
+      <div class="label">Source</div>
+<pre><code class="language-c">.it.cols
+.d.rows[r][i]
+.d
+new(.d.ykind)</code></pre>
+    </div>
+    <div>
+      <div class="label">After prep</div>
+<pre><code class="language-c">it["cols"]
+d["rows"][r][i]
+HEAP[d]
+new(HEAP[d]["ykind"])</code></pre>
+    </div>
+  </div>
+  <p>Run the preprocessor manually with <code>dot file.awk</code> or <code>make show</code>.</p>
+</section>
+
+<section id="new">
+  <h2>new</h2>
+  <p>Allocate an object, dispatch its initializer. <code>new(t)</code> increments <code>NID</code>, sets <code>.it.is = t</code>, and calls <code>t_init</code> if defined. Returns the new ID.</p>
+<pre><code class="language-c">function new(t,    it, fn) {
+  it = ++NID;  .it.is = t
+  fn = t "_init"
+  return (fn in FUNCTAB) ? @fn(it) : it }</code></pre>
+  <p>Storage lives in <code>HEAP[id]["field"]</code>.</p>
+</section>
+
+<section id="free">
+  <h2>out / free</h2>
+  <p>Lifetime helpers. <code>out(i, x)</code> deletes every <code>HEAP[j]</code> with <code>j &gt; i</code> and returns scalar <code>x</code>. <em>Unsafe</em> if a survivor still references a freed ID.</p>
+  <p><code>free(i)</code> drops one slot precisely. Safer.</p>
+<pre><code class="language-c">function spread(d, rows,    y, v) {
+  y = ycol(d, rows); v = var(y); free(y); return v }</code></pre>
+</section>
+
+<section id="arr">
+  <h2>arr</h2>
+  <p>Force a value to be an array. gawk creates arrays-of-arrays lazily. <code>arr(x)</code> is the standard idiom.</p>
+<pre><code class="language-c">function arr(x) { x[""] = 0; delete x[""] }</code></pre>
+</section>
+
+<section id="dispatch">
+  <h2>Polymorphic dispatch</h2>
+  <p>Each object carries its type string in <code>.it.is</code>. A polymorphic call builds the function name and uses gawk's indirect call.</p>
+<pre><code class="language-c">function add(k, x, train,  fn) {
+  fn = .k.is "_add"
+  return @fn(k, x, train) }</code></pre>
+  <p>Dispatchers in <code>numsym.awk</code>: <code>add</code>, <code>like</code>, <code>mid</code>, <code>var</code>. Add your own by following the pattern.</p>
+</section>
+
+<section id="num">
+  <h2>num</h2>
+  <p>Numeric column. Welford running mean + variance with optional weight. <code>w=1</code> adds, <code>w=-1</code> subtracts (used by the active learner to evict rows).</p>
+<pre><code class="language-c">function num_add(it, x, train, w,    d, d2) {
+  w = (w == "" ? 1 : w + 0)
+  if (x == "?") return x
+  x += 0
+  if (!train) return x
+  if (w &lt; 0 && .it.n &lt;= 2) { .it.n=0; .it.mu=0; .it.m2=0; return x }
+  .it.n  += w
+  d  = x - .it.mu;  .it.mu += w * d / .it.n
+  d2 = x - .it.mu;  .it.m2 += w * d * d2
+  return x }
+
+function num_var(it) {
+  return .it.n &lt; 2 ? 0 : sqrt(.it.m2 / (.it.n - 1)) }
+
+function num_mid(it) { return .it.mu }</code></pre>
+</section>
+
+<section id="sym">
+  <h2>sym</h2>
+  <p>Symbolic column. Counts table, mode, entropy. Optional weight for sub.</p>
+<pre><code class="language-c">function sym_init(it)   { arr(.it.has); return it }
+
+function sym_add(it, x, train, w) {
+  w = (w == "" ? 1 : w + 0)
+  if (x == "?" || !train) return x
+  .it.n      += w
+  .it.has[x] += w
+  if (.it.has[x] &lt;= 0) delete .it.has[x]
+  return x }
+
+function sym_var(it,    e, k, p) {
+  for (k in .it.has) { p = .it.has[k]/.it.n; e -= p*log(p) }
+  return e }
+
+function sym_mid(it,    k, b, bv) {
+  bv = -1
+  for (k in .it.has) if (.it.has[k] &gt; bv) { bv = .it.has[k]; b = k }
+  return b }</code></pre>
+  <p>Polymorphic dispatcher in <code>numsym.awk</code>:</p>
+<pre><code class="language-c">function add(k, x, train, w,  fn) {
+  fn = .k.is "_add"
+  return @fn(k, x, train, w) }</code></pre>
+</section>
+
+<section id="conv">
+  <h2>Conventions</h2>
+  <ul style="margin-left: 24px;">
+    <li><strong>UPPER</strong> = global. <code>HEAP</code>, <code>NID</code>, <code>FUNCTAB</code>.</li>
+    <li><strong>lowercase</strong> = local. Declare in the gawk pseudo-arg slot (extra spaces in arg list).</li>
+    <li>Every object sets <code>.it.is</code> to its type string.</li>
+    <li>Run <code>rogues()</code> at <code>END</code> to flag any lowercase name leaked into <code>SYMTAB</code>.</li>
+    <li>BEGIN/END blocks have no local scope &mdash; move logic to functions if you need locals there.</li>
+  </ul>
+</section>
+
+<section id="rogues">
+  <h2>rogues</h2>
+  <p>End-of-run leak detector.</p>
+<pre><code class="language-c">function rogues(    i) {
+  for (i in SYMTAB)
+    if (i ~ /^[a-z]/) print "leak:", i &gt; "/dev/stderr" }</code></pre>
+</section>
+
+<section id="files">
+  <h2>Files</h2>
+  <table>
+    <tr><th>File</th><th>Lines</th><th>Purpose</th></tr>
+    <tr><td><code>dot</code></td><td>3</td><td>bash wrapper that runs <code>prep.awk</code></td></tr>
+    <tr><td><code>prep.awk</code></td><td>10</td><td>preprocessor (no API)</td></tr>
+    <tr><td><code>dot.awk</code></td><td>23</td><td><code>new</code>, <code>out</code>, <code>free</code>, <code>arr</code>, <code>rogues</code></td></tr>
+    <tr><td><code>numsym.awk</code></td><td>61</td><td><code>num</code>/<code>sym</code> types + <code>add</code>, <code>like</code>, <code>mid</code>, <code>var</code></td></tr>
+    <tr><td><code>hello.awk</code></td><td>12</td><td>smallest example</td></tr>
+    <tr><td><code>stats.awk</code></td><td>~24</td><td>per-column stats</td></tr>
+  </table>
+</section>
+
+<section id="limits">
+  <h2>Limitations</h2>
+  <p>Read these before deploying to anything you care about.</p>
+  <ul style="margin-left: 24px;">
+    <li><strong>Preprocessor is regex, not a parser.</strong> A literal <code>".x"</code> inside a string or regex constant gets rewritten too. So does <code>printf "%.3f"</code> if a value-char precedes the dot. Workarounds: rename the field, or write raw <code>HEAP[x]</code> directly.</li>
+    <li><strong>Comments are not stripped.</strong> A <code>.x</code> inside a <code># ...</code> comment also rewrites. Harmless but ugly in <code>make show</code>.</li>
+    <li><strong><code>.it.is</code> is a reserved field name.</strong> Used internally for type dispatch. Don't shadow it.</li>
+    <li><strong><code>out(i, x)</code> is unsafe</strong> when any object past slot <code>i</code> is still referenced. Returned references become dangling. Use <code>free(i)</code> for precise drops.</li>
+    <li><strong>Monotonic IDs.</strong> <code>NID</code> never decreases. Long-running processes accumulate slots. No GC, no recycling.</li>
+    <li><strong>No type checking.</strong> <code>add(num_obj, "abc", 1)</code> coerces silently per awk rules.</li>
+    <li><strong>Indirect call cost.</strong> Every polymorphic <code>add()</code> does string concat + <code>FUNCTAB</code> lookup per row. Hot loops can call <code>num_add</code> directly.</li>
+    <li><strong>gawk 5.4.0 bug:</strong> <code>gensub</code>'s second match returns empty captures. The preprocessor uses a <code>match</code>/<code>substr</code> loop instead.</li>
+    <li><strong>Bash 4+ required.</strong> macOS <code>/bin/sh</code> is bash 3.x &mdash; process substitution <code>&lt;(...)</code> won't work there.</li>
+  </ul>
+</section>
+
+</div>
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

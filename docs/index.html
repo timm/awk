@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>awk &mdash; tiny gawk tools</title>
+<meta name="description" content="A family of small gawk tools: dot (object sugar) and dotlearn (machine learning).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <a href="index.html" class="logo">awk</a>
+    <nav class="top">
+      <a href="index.html">Home</a>
+      <a href="dot/index.html">dot</a>
+      <a href="dotlearn/index.html">dotlearn</a>
+      <a href="https://github.com/timm/awk">Source</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Tiny gawk tools.</h1>
+    <p class="tagline">
+      A small family of gawk tools, layered. Each is one preprocessor pass +
+      a few hundred lines. Each does one thing. Each can be read in a sitting.
+    </p>
+
+    <div class="compare">
+      <div>
+        <h4>dot</h4>
+        <p style="color: var(--fg-soft); margin: 0 0 12px;">
+          Object sugar for gawk. <code>.it.field</code> &rarr; <code>HEAP[it]["field"]</code>.
+          Preprocessor + runtime + NUM/SYM stats.
+        </p>
+        <p style="margin: 0;">
+          <a href="dot/tour.html">Tour</a> &middot;
+          <a href="dot/example.html">Example</a> &middot;
+          <a href="dot/manual.html">Manual</a>
+        </p>
+      </div>
+      <div>
+        <h4>dotlearn</h4>
+        <p style="color: var(--fg-soft); margin: 0 0 12px;">
+          ML on top of dot. Three apps: tree, naive Bayes, active learning.
+          On auto93, ~14% labels &rarr; top-tier picks.
+        </p>
+        <p style="margin: 0;">
+          <a href="dotlearn/tour.html">Tour</a> &middot;
+          <a href="dotlearn/example.html">Examples</a> &middot;
+          <a href="dotlearn/manual.html">Manual</a>
+        </p>
+      </div>
+    </div>
+
+    <p style="margin-top: 24px;">
+      Start with <a href="dot/tour.html">the dot tour</a> &mdash; install in 30 seconds, write a 5-line program, see it run.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

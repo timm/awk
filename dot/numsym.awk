@@ -3,21 +3,24 @@
 # coercion happens inside *_add; here we only guard "?"
 
 # --- dispatch (lives with num/sym, the types it switches over) -----
-function add (k, x, train,  fn) { fn = .k.is "_add"
-                                  return @fn(k, x, train) }
+function add (k, x, train, w,  fn) { fn = .k.is "_add"
+                                     return @fn(k, x, train, w) }
 function like(k, x, p, m,   fn) { fn = .k.is "_like"
                                   return @fn(k, x, p, m) }
 function var(it,    fn) { fn = .it.is "_var"; return @fn(it) }
 function mid(it,    fn) { fn = .it.is "_mid"; return @fn(it) }
 
 # --- NUM ------------------------------------------------------------
-function num_add(it, x, train,    d, d2) {
+# w is optional weight (default 1). w=-1 subtracts.
+function num_add(it, x, train, w,    d, d2) {
+  w = (w == "" ? 1 : w + 0)
   if (x == "?") return x
   x += 0
   if (!train) return x
-  .it.n++
-  d  = x - .it.mu;  .it.mu += d / .it.n
-  d2 = x - .it.mu;  .it.m2 += d * d2
+  if (w < 0 && .it.n <= 2) { .it.n=0; .it.mu=0; .it.m2=0; return x }
+  .it.n  += w
+  d  = x - .it.mu;  .it.mu += w * d / .it.n
+  d2 = x - .it.mu;  .it.m2 += w * d * d2
   return x }
 
 function num_var(it) {
@@ -40,10 +43,12 @@ function num_like(it, x, prior, m,    s, z) {
 # --- SYM ------------------------------------------------------------
 function sym_init(it)   { arr(.it.has); return it }
 
-function sym_add(it, x, train) {
-  if (x == "?")  return x
-  if (!train)    return x
-  .it.n++; .it.has[x]++
+function sym_add(it, x, train, w) {
+  w = (w == "" ? 1 : w + 0)
+  if (x == "?" || !train) return x
+  .it.n      += w
+  .it.has[x] += w
+  if (.it.has[x] <= 0) delete .it.has[x]
   return x }
 
 function sym_var(it,    e, k, p) {

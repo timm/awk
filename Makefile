@@ -7,7 +7,7 @@ CLS     := '\033[H\033[J'
 cRESET  := '\033[0m'
 cYELLOW := '\033[1;33m'
 
-TOOLS := dot
+TOOLS := dot dotlearn
 
 help: ## show help
 	@awk 'BEGIN{FS=":.*##"} \
@@ -28,9 +28,12 @@ sh: ## launch dev shell (banner + etc/bash.rc if present)
 	@-bash --init-file $(ETC)/bash.rc -i
 
 dot: ## run dot/ default target
-	$(MAKE) -C dot
+	$(MAKE) -C dot stats
+
+dotlearn: ## run dotlearn/ default target
+	$(MAKE) -C dotlearn demo
 
 $(TOOLS:%=%-help): %-help: ## show <tool>'s help
 	$(MAKE) -C $* help
 
-.PHONY: help push pull sh dot $(TOOLS:%=%-help)
+.PHONY: help push pull sh dot dotlearn $(TOOLS:%=%-help)

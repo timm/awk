@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotlearn &mdash; Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotlearn">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotlearn</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="example.html">Examples</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="layout">
+
+<aside class="toc">
+  <h4>Manual</h4>
+  <ul>
+    <li class="group">Data</li>
+    <li><a href="#sigils">header sigils</a></li>
+    <li><a href="#data">data type</a></li>
+    <li><a href="#clone">clone / feed</a></li>
+    <li class="group">Distance</li>
+    <li><a href="#dist">disty / distx / aha</a></li>
+    <li class="group">Models</li>
+    <li><a href="#tree">tree</a></li>
+    <li><a href="#treeshow">treeshow</a></li>
+    <li><a href="#bayes">bayes</a></li>
+    <li class="group">Active learning</li>
+    <li><a href="#wins">wins</a></li>
+    <li><a href="#active">active pipeline</a></li>
+    <li class="group">Reference</li>
+    <li><a href="#config">config</a></li>
+    <li><a href="#files">files</a></li>
+  </ul>
+</aside>
+
+<div class="content">
+
+<h1>Manual</h1>
+<p class="lead">Three apps, layered on <a href="../dot/index.html">dot</a>: tree, nb, acquire.</p>
+
+<section id="sigils">
+  <h2>Header sigils</h2>
+  <p>Suffix on column names tells <code>data.awk</code> what each column is for.</p>
+  <table>
+    <tr><th>Pattern</th><th>Type</th><th>Role</th></tr>
+    <tr><td><code>^[A-Z]</code></td><td>numeric</td><td><code>Age</code>, <code>Mpg</code></td></tr>
+    <tr><td><code>^[a-z]</code></td><td>symbolic</td><td><code>class</code>, <code>color</code></td></tr>
+    <tr><td><code>name+</code></td><td>y-goal</td><td>maximize, <code>ykind=num</code></td></tr>
+    <tr><td><code>name-</code></td><td>y-goal</td><td>minimize, <code>ykind=num</code></td></tr>
+    <tr><td><code>name!</code></td><td>klass</td><td>classification target, <code>ykind=sym</code></td></tr>
+  </table>
+</section>
+
+<section id="data">
+  <h2>data type</h2>
+  <p>Header parse + row table. Pure ingestion. No y/target logic, no splits. Apps add what they need.</p>
+<pre><code class="language-c">function data_init(it) {
+  arr(.it.cols); arr(.it.rows); arr(.it.all)
+  arr(.it.y);    arr(.it.hdr);  arr(.it.nump)
+  .it.nc = 0; .it.nrows = 0; .it.klass = 0; .it.ykind = ""
+  return it }</code></pre>
+  <p>Public: <code>data_head(d, line)</code> parses CSV header. <code>data_read(d, training)</code> reads one row from <code>$0</code> and feeds each cell into its column (if <code>training</code>).</p>
+</section>
+
+<section id="clone">
+  <h2>data_clone / data_feed</h2>
+  <p>Used by the active learner to avoid info leak. <code>data_clone(d)</code> returns a fresh data with same headers but empty col stats. <code>data_feed(dest, row_ids, src)</code> copies selected rows from <code>src</code> into <code>dest</code>, updating <code>dest</code>'s col stats and row table.</p>
+<pre><code class="language-c">DT = data_clone(D)
+data_feed(DT, train_ids, D)   # only train rows feed into DT.cols
+# now disty/distx using DT match what ezr's d_train sees</code></pre>
+</section>
+
+<section id="dist">
+  <h2>disty / distx / aha</h2>
+  <p>Minkowski distance functions. <code>THE.p</code> sets the exponent (default 2 = Euclidean).</p>
+  <table>
+    <tr><th>Function</th><th>Returns</th></tr>
+    <tr><td><code>disty(d, row)</code></td><td>distance to heaven across y-cols. Each y-col contributes <code>(num_norm(c, x) - heaven)^p</code>.</td></tr>
+    <tr><td><code>distx(d, r1, r2)</code></td><td>distance between two rows on x-cols. Sums <code>aha(c, u, v)^p</code>.</td></tr>
+    <tr><td><code>aha(c, u, v)</code></td><td>distance between two values on one column. Sym: <code>0/1</code>. Num: normalised diff with missing-value swing.</td></tr>
+    <tr><td><code>mids(d, cols, row)</code></td><td>centroid: write each col's mid into <code>row[i]</code>.</td></tr>
+  </table>
+</section>
+
+<section id="tree">
+  <h2>tree</h2>
+  <p>Decision/regression tree. <strong>Binary cuts</strong> for both numeric and symbolic columns (ezr-style). Numeric: split at median. Symbolic: try every distinct value as a binary cut, pick the best.</p>
+  <table>
+    <tr><th>Function</th><th>Purpose</th></tr>
+    <tr><td><code>tree_train(d, rows, dep, label)</code></td><td>recursive build; stores <code>.n.label</code>, <code>.n.dep</code>, <code>.n.mu</code>, <code>.n.nrows</code>, <code>.n.ymids[name]</code> at each node</td></tr>
+    <tr><td><code>tree_test(d, n, row)</code></td><td>walk to leaf, return <code>.leaf.mu</code></td></tr>
+    <tr><td><code>tree_leaf(d, n, row)</code></td><td>walk to leaf, return the leaf node id</td></tr>
+    <tr><td><code>tree_cuts(d, c, rows, out)</code></td><td>candidate cuts: median for numeric, distinct values for symbolic</td></tr>
+    <tr><td><code>try_split</code> / <code>ycol</code> / <code>spread</code></td><td>helpers: build l/r partitions, score, evaluate spread</td></tr>
+  </table>
+  <p>Stop conditions:</p>
+  <ul style="margin-left: 24px;">
+    <li><code>length(rows) < 2 * THE.leaf</code> (need enough rows to consider splitting)</li>
+    <li><code>dep >= THE.maxd</code></li>
+    <li>no split with both sides &ge; <code>THE.leaf</code> (balance filter)</li>
+  </ul>
+  <p>Selection: minimise <code>n_l * spread(l) + n_r * spread(r)</code>.</p>
+</section>
+
+<section id="treeshow">
+  <h2>treeshow</h2>
+  <p>Pretty-printer. <code>tree_train</code> caches <code>label</code> + <code>dep</code> + <code>ymids</code> on each node, so <code>treeshow</code> is just a recursive walk.</p>
+<pre><code class="language-c">function treeshow_walk(d, n,    pad, i, key, name) {
+  pad = ""
+  for (i = 0; i &lt; .n.dep; i++) pad = pad "|   "
+  printf "%-40s %6.3f %5d", pad .n.label, .n.mu, .n.nrows
+  for (i in .d.y) printf " %8.2f", .n.ymids[.d.hdr[i]]
+  printf "\n"
+  if (.n.kind == "branch")
+    for (key in .n.kids) treeshow_walk(d, .n.kids[key]) }</code></pre>
+</section>
+
+<section id="bayes">
+  <h2>bayes</h2>
+  <p>Naive Bayes. Per-class column objects accumulate during training. At test time: log-likelihood from <code>num_like</code> / <code>sym_like</code> + class prior.</p>
+  <p>Smoothing: <code>m</code>-estimate (default 1) for both numeric and symbolic likelihoods, <code>k</code>-estimate (default 1) for class priors.</p>
+  <p>Functions: <code>nb_train</code>, <code>nb_test</code>, <code>nb_pred</code>, <code>nb_safe_like</code>.</p>
+</section>
+
+<section id="wins">
+  <h2>wins</h2>
+  <p>Percentile-based scorer (0..100, higher = better). Initialised once on a row set; computes <code>lo</code>, <code>med</code>, <code>sd</code> from sorted distys.</p>
+<pre><code class="language-c">W = new("wins")
+wins_init(d, .d.all, W)         # capture lo/med/sd from full data
+score = wins_score(d, row, W)   # 100 = within 0.35*sd of lo
+                                 # 0   = at median
+                                 # negative = worse than median</code></pre>
+  <p>The <code>0.35*sd</code> cushion treats &quot;within ~third of robust-sd of best&quot; as effectively-best.</p>
+</section>
+
+<section id="active">
+  <h2>active pipeline</h2>
+  <p>Glues everything together. See <a href="example.html#acquire">Examples / acquire</a> for the full step-by-step. Key choices:</p>
+  <ul style="margin-left: 24px;">
+    <li>Wins computed on FULL data (matches ezr's <code>wins(d0)</code>) &mdash; captured before any train/test split.</li>
+    <li>All other operations (tree, acquire, distx, disty during selection) use <code>dt</code> &mdash; a clone of <code>d</code> with only train rows fed. No info leak.</li>
+    <li>Acquire score: <code>distx(row, best_centroid) - distx(row, rest_centroid)</code>. Pick row with min score (closest to best, farthest from rest).</li>
+    <li>Cap on best: <code>sqrt(|labelled|)</code>. Worst by disty evicted to rest each iteration.</li>
+  </ul>
+</section>
+
+<section id="config">
+  <h2>Config</h2>
+  <p>Key/value CSV fed as the first input file. Each app's CLI captures via <code>FNR == NR { THE[$1] = $2 + 0; next }</code>.</p>
+  <table>
+    <tr><th>App</th><th>Keys</th><th>Defaults (Makefile)</th></tr>
+    <tr><td>tree</td><td><code>wait</code>, <code>leaf</code>, <code>maxd</code>, <code>p</code></td><td>200, 4, 8, 2</td></tr>
+    <tr><td>nb</td><td><code>wait</code>, <code>m</code>, <code>k</code></td><td>200, 1, 1</td></tr>
+    <tr><td>acquire</td><td><code>seed</code>, <code>p</code>, <code>few</code>, <code>start</code>, <code>budget</code>, <code>check</code>, <code>leaf</code>, <code>maxd</code></td><td>1, 2, 128, 4, 50, 5, 3, 8</td></tr>
+  </table>
+</section>
+
+<section id="files">
+  <h2>Files</h2>
+  <table>
+    <tr><th>File</th><th>Lines</th><th>Purpose</th></tr>
+    <tr><td><code>data.awk</code></td><td>~50</td><td>CSV ingest, sigils, <code>data_clone</code>, <code>data_feed</code></td></tr>
+    <tr><td><code>dist.awk</code></td><td>~25</td><td><code>disty</code>, <code>distx</code>, <code>aha</code>, <code>mids</code></td></tr>
+    <tr><td><code>tree.awk</code></td><td>~110</td><td>tree functions (binary cuts, balance filter)</td></tr>
+    <tr><td><code>tree-cli.awk</code></td><td>~15</td><td>CLI rules for <code>make tree</code></td></tr>
+    <tr><td><code>treeshow.awk</code></td><td>~15</td><td>tree pretty-printer</td></tr>
+    <tr><td><code>bayes.awk</code></td><td>~35</td><td>Naive Bayes functions</td></tr>
+    <tr><td><code>bayes-cli.awk</code></td><td>~12</td><td>CLI rules for <code>make nb</code></td></tr>
+    <tr><td><code>wins.awk</code></td><td>~25</td><td>percentile scorer</td></tr>
+    <tr><td><code>active.awk</code></td><td>~140</td><td>active learning pipeline</td></tr>
+    <tr><td><code>metrics.awk</code></td><td>~30</td><td>per-class confusion matrix</td></tr>
+    <tr><td><code>shuf.awk</code></td><td>~15</td><td>seeded row shuffle</td></tr>
+  </table>
+</section>
+
+</div>
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

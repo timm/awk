@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotlearn &mdash; Examples</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotlearn">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotlearn</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="example.html">Examples</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Examples</h1>
+<p class="lead">One section per app. Each shows real input, real output.</p>
+
+<!-- ============================================================ -->
+<h2>tree</h2>
+<p>Decision tree on heart-disease data. Binary cuts, ezr-style.</p>
+
+<h3>Input</h3>
+<pre><code class="language-bash">AGE,sex,cp,TRESTBPS,CHOL,fbs,restecg,THALACH,exang,OLDPEAK,slope,CA,thal,num!
+63,male,typ_angina,145,233,t,left_vent_hyper,150,no,2.3,down,0,fixed_defect,&lt;50
+67,male,asympt,160,286,f,left_vent_hyper,108,yes,1.5,flat,3,normal,&gt;50_1</code></pre>
+
+<h3>Run</h3>
+<pre><code class="language-bash">cd dotlearn
+make tree DATA=$HOME/gits/moot/classify/heart.c.csv</code></pre>
+
+<h3>Output</h3>
+<pre><code class="language-bash">    n     pd     pf   prec    acc  class
+   48  0.625  0.145  0.789  0.748  &gt;50_1
+   55  0.855  0.375  0.723  0.748  &lt;50</code></pre>
+
+<p><code>n</code> = test count, <code>pd</code> = recall, <code>pf</code> = false-alarm, <code>prec</code> = precision, <code>acc</code> = accuracy. Same metrics for both classification and regression (with continuous targets, <code>class</code> column shows raw distance values).</p>
+
+<h3>Variants</h3>
+<pre><code class="language-bash">make tree-raw       # skip metrics, see "pred,actual" lines
+make tree20         # 20 shuffled splits, averaged metrics</code></pre>
+
+<!-- ============================================================ -->
+<h2>nb</h2>
+<p>Naive Bayes. Same shape as tree.</p>
+
+<h3>Run</h3>
+<pre><code class="language-bash">make nb DATA=$HOME/gits/moot/classify/heart.c.csv</code></pre>
+
+<h3>Output</h3>
+<pre><code class="language-bash">    n     pd     pf   prec    acc  class
+   48  0.729  0.091  0.875  0.825  &gt;50_1
+   55  0.909  0.271  0.794  0.825  &lt;50</code></pre>
+<p>acc=0.825 on heart.c (vs tree=0.748). Naive Bayes wins here because heart has many low-cardinality symbolic columns.</p>
+
+<h3>Variants</h3>
+<pre><code class="language-bash">make nb20           # 20-shuffle cross-val</code></pre>
+
+<!-- ============================================================ -->
+<h2>acquire</h2>
+<p>Active learning on auto93 (multi-objective: <code>Lbs-</code>, <code>Acc+</code>, <code>Mpg+</code>).</p>
+
+<h3>Pipeline</h3>
+<ol style="margin-left: 24px; margin-bottom: 14px;">
+  <li><strong>Read</strong> all 398 rows (column stats from full data).</li>
+  <li><strong>Wins percentiles:</strong> compute <code>lo</code>, <code>med</code>, <code>sd</code> of disty over full data. Used later to score the final pick.</li>
+  <li><strong>Shuffle</strong> + split half/half: train pool (199), test pool (199). Cap train pool at 128.</li>
+  <li><strong>Clone:</strong> build a fresh data <code>dt</code> with same column structure but only train rows fed in. All subsequent stats come from <code>dt</code>, not full data &mdash; matches ezr's setup, no info leak.</li>
+  <li><strong>Warm-start:</strong> label first 4 train rows. Sort by disty. Top sqrt(4)=2 go to <code>best</code>, rest go to <code>rest</code>.</li>
+  <li><strong>Acquire loop</strong> (50 iterations): score each unlabelled row with <code>distx(best_centroid) - distx(rest_centroid)</code>. Pick lowest score. Add to <code>best</code>. Cap <code>best</code> at sqrt(|labelled|); evict worst to <code>rest</code>.</li>
+  <li><strong>Tree:</strong> train on the 54 labelled rows.</li>
+  <li><strong>Predict:</strong> walk each test row to its tree leaf. Take top 5 by leaf <code>mu</code>.</li>
+  <li><strong>Score:</strong> of those 5, pick the one with min actual disty. Score against the wins percentiles from step 2.</li>
+</ol>
+
+<h3>Run</h3>
+<pre><code class="language-bash">make acquire DATA=$HOME/gits/moot/optimize/misc/auto93.csv</code></pre>
+
+<h3>Output</h3>
+<pre><code class="language-bash">wins  lo=0.075  med=0.535  sd=0.266
+
+=== TREE on 54 labelled rows ===
+rule                                        d2h     n     Lbs-     Acc+     Mpg+
+ROOT                                      0.348    54  2285.63    16.49    29.63
+|   Clndrs >  4                           0.725     6  3348.50    13.47    18.33
+|   |   Clndrs >  6                       0.842     3  3818.00    13.07    13.33
+|   |   Clndrs <= 6                       0.608     3  2879.00    13.87    23.33
+|   Clndrs <= 4                           0.300    48  2152.77    16.87    31.04
+|   |   HpX >  70                         0.378    23  2314.83    15.84    28.70
+|   |   |   origin != 1                   0.413    15  2295.00    15.59    27.33
+|   |   |   |   Volume >  108             0.465     7  2455.29    15.97    24.29
+|   |   |   |   Volume <= 108             0.367     8  2154.75    15.26    30.00
+|   |   |   origin == 1                   0.312     8  2352.00    16.31    31.25
+|   |   HpX <= 70                         0.229    25  2003.68    17.81    33.20
+|   |   |   Volume >  91                  0.283    12  2120.67    17.71    30.83
+|   |   |   Volume <= 91                  0.180    13  1895.69    17.91    35.38
+
+=== RESULT ===
+labelled  : 54   (start=4, budget=50)
+test rows : 199
+top 5 guess actual-disty=0.158  win=100/100</code></pre>
+
+<h3>Reading the tree</h3>
+<p>Each row of the tree shows: rule, <code>d2h</code> (mean distance-to-heaven for rows in the node), <code>n</code> (row count), then per-y-goal column means. The deepest leaves with low <code>d2h</code> represent the &quot;best&quot; corner of design space &mdash; light cars (Lbs ~1900), high acceleration (Acc 17-18), high MPG (35).</p>
+
+<h3>Cross-seed variance</h3>
+<p>30 seeds on auto93 (default config: start=4, budget=50, check=5):</p>
+<pre><code class="language-bash">all 30 seeds: win=100/100
+pick disty: range [0.075, 0.160], all inside lo + 0.35*sd cushion (0.168)</code></pre>
+<p>Roughly: 14% labels + 5 oracle calls at end &rarr; consistently top-tier picks.</p>
+
+<h3>Config keys</h3>
+<table>
+  <tr><th>Key</th><th>Default</th><th>Meaning</th></tr>
+  <tr><td><code>seed</code></td><td>1</td><td>random seed (Fisher-Yates shuffle)</td></tr>
+  <tr><td><code>p</code></td><td>2</td><td>Minkowski exponent (1=Manhattan, 2=Euclid)</td></tr>
+  <tr><td><code>few</code></td><td>128</td><td>cap on train pool size</td></tr>
+  <tr><td><code>start</code></td><td>4</td><td>warm-start labels</td></tr>
+  <tr><td><code>budget</code></td><td>50</td><td>acquire loop iterations</td></tr>
+  <tr><td><code>check</code></td><td>5</td><td>top-N predictions to evaluate at end</td></tr>
+  <tr><td><code>leaf</code></td><td>3</td><td>min rows per tree leaf</td></tr>
+  <tr><td><code>maxd</code></td><td>8</td><td>max tree depth</td></tr>
+</table>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

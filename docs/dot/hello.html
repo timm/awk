@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dot &mdash; Hello</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dot">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dot</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="hello.html">Hello</a>
+      <a href="example.html">Example</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Hello, dot</h1>
+<p class="lead">Smallest working dot program: running mean of one column.</p>
+
+<h2>The file</h2>
+<p>Save as <code>hello.awk</code> in <code>dot/</code>. Twelve lines.</p>
+<pre><code class="language-c"># hello.awk -- running mean of column 1
+
+function num_init(it) { .it.n = 0; .it.mu = 0; return it }
+
+function num_add(it, x) {
+  .it.n++
+  .it.mu += (x - .it.mu) / .it.n }
+
+BEGIN { N = new("num") }
+
+      { num_add(N, $1) }
+
+END   { printf "n=%d mean=%.3f\n", .N.n, .N.mu }</code></pre>
+
+<h2>Step 1: see the rewrite</h2>
+<pre><code class="language-bash">$ dot hello.awk</code></pre>
+<pre><code class="language-c">function num_init(it) { HEAP[it]["n"] = 0; HEAP[it]["mu"] = 0; return it }
+
+function num_add(it, x) {
+  HEAP[it]["n"]++
+  HEAP[it]["mu"] += (x - HEAP[it]["mu"]) / HEAP[it]["n"] }
+
+BEGIN { N = new("num") }
+
+      { num_add(N, $1) }
+
+END   { printf "n=%d mean=%.3f\n", HEAP[N]["n"], HEAP[N]["mu"] }</code></pre>
+
+<p>Two rules at work:</p>
+<ul style="margin-left: 24px;">
+  <li><code>.it.n</code> &rarr; <code>HEAP[it]["n"]</code> (value-char dot field)</li>
+  <li><code>.N</code> &rarr; <code>HEAP[N]</code> (bare dot object ref)</li>
+</ul>
+
+<h2>Step 2: run it</h2>
+<pre><code class="language-bash">$ printf "1\n2\n3\n4\n5\n" \
+  | gawk -f &lt;(dot dot.awk) -f &lt;(dot hello.awk)
+n=5 mean=3.000</code></pre>
+
+<h2>What just happened</h2>
+<ol style="margin-left: 24px;">
+  <li><code>new("num")</code> &mdash; allocates ID 1, sets <code>.it.is = "num"</code>, calls <code>num_init</code> to seed slots.</li>
+  <li>Each input row: <code>num_add(N, $1)</code> updates running mean (Welford's algorithm).</li>
+  <li><code>END</code> reads <code>.N.n</code> and <code>.N.mu</code> &mdash; same as <code>HEAP[N]["n"]</code>, <code>HEAP[N]["mu"]</code>.</li>
+</ol>
+
+<h2>Limitation seen here</h2>
+<p>If you ran <code>dot hello.awk</code> above, the comment <code># hello.awk</code> became <code># hello["awk"]</code>. The preprocessor rewrites inside comments and strings &mdash; it's regex, not a parser. Harmless when piped into gawk (comments are ignored), ugly when shown to humans. <a href="manual.html#limits">More limitations</a>.</p>
+
+<h2>Next</h2>
+<p>Replace the running-mean object with the bundled <code>numsym.awk</code> types &mdash; <a href="example.html">Example</a> walks through <code>stats.awk</code>, which computes mean/stdev for numeric columns and mode/entropy for symbolic ones, all via the same <code>add()</code> call.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

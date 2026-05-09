@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotlearn &mdash; Tour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotlearn">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotlearn</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="example.html">Examples</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Tour</h1>
+<p class="lead">All three apps end-to-end: tree, nb, acquire.</p>
+
+<p style="background: var(--bg-alt); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 6px; margin-bottom: 24px;">
+  <strong>Prerequisite:</strong> dotlearn loads files from the sibling
+  <a href="../dot/index.html">dot</a> directory. Take
+  <a href="../dot/tour.html">the dot tour</a> first if you haven't seen the
+  object sugar.
+</p>
+
+<div class="step"><div class="num">1</div><h2>Clone &amp; layout</h2></div>
+<pre class="term">
+<span class="prompt">$</span> git clone https://github.com/timm/awk
+<span class="prompt">$</span> cd awk/dotlearn
+<span class="prompt">$</span> ls
+<span class="out">active.awk      bayes.awk       bayes-cli.awk   data.awk
+dist.awk        Makefile        metrics.awk     shuf.awk
+tree.awk        tree-cli.awk    treeshow.awk    wins.awk</span>
+</pre>
+
+<div class="step"><div class="num">2</div><h2>Get sample data</h2></div>
+<pre class="term">
+<span class="prompt">$</span> git clone https://github.com/timm/moot ~/gits/moot
+<span class="prompt">$</span> head -2 ~/gits/moot/optimize/misc/auto93.csv
+<span class="out">Clndrs,Volume,HpX,Model,origin,Lbs-,Acc+,Mpg+
+8,304,193,70,1,4732,18.5,10</span>
+</pre>
+<p>Header sigils: UPPERCASE = numeric, suffix <code>!</code> = class, <code>+</code>/<code>-</code> = max/min goal.</p>
+
+<div class="step"><div class="num">3</div><h2>App 1: tree</h2></div>
+<p>Decision/regression tree. Train on first <code>wait</code> rows, test on the rest:</p>
+<pre class="term">
+<span class="prompt">$</span> make tree DATA=~/gits/moot/classify/heart.c.csv
+<span class="out">    n     pd     pf   prec    acc  class
+   48  0.625  0.145  0.789  0.748  &gt;50_1
+   55  0.855  0.375  0.723  0.748  &lt;50</span>
+</pre>
+<p>Same pipeline does regression on <code>+</code>/<code>-</code> goals: <code>make tree DATA=auto93.csv</code> emits raw <code>pred,actual</code> distances.</p>
+
+<div class="step"><div class="num">4</div><h2>App 2: nb (naive Bayes)</h2></div>
+<p>Streaming Naive Bayes. m-estimate / k-estimate smoothing:</p>
+<pre class="term">
+<span class="prompt">$</span> make nb DATA=~/gits/moot/classify/heart.c.csv
+<span class="out">    n     pd     pf   prec    acc  class
+   48  0.729  0.091  0.875  0.825  &gt;50_1
+   55  0.909  0.271  0.794  0.825  &lt;50</span>
+</pre>
+<p>Same shape as tree: read CSV, train rows fed into per-class column objects, test rows scored by log-likelihood. acc=0.825 on heart.</p>
+
+<div class="step"><div class="num">5</div><h2>App 3: acquire (active learning)</h2></div>
+<p>This is the interesting one. Shuffle. Split 50/50 train/test. Warm-start with 4 random labels. Acquire 50 more by centroid score (closer to best, farther from rest). Train a tree on the 54 labelled rows. Test, take top 5 by tree prediction, score the best by actual disty.</p>
+<pre class="term">
+<span class="prompt">$</span> make acquire DATA=~/gits/moot/optimize/misc/auto93.csv
+<span class="out">wins  lo=0.075  med=0.535  sd=0.266
+
+=== TREE on 54 labelled rows ===
+rule                                        d2h     n     Lbs-     Acc+     Mpg+
+ROOT                                      0.348    54  2285.63    16.49    29.63
+|   Clndrs >  4                           0.725     6  3348.50    13.47    18.33
+|   |   Clndrs >  6                       0.842     3  3818.00    13.07    13.33
+|   |   Clndrs <= 6                       0.608     3  2879.00    13.87    23.33
+|   Clndrs <= 4                           0.300    48  2152.77    16.87    31.04
+|   |   HpX >  70                         0.378    23  2314.83    15.84    28.70
+|   |   |   origin != 1                   0.413    15  2295.00    15.59    27.33
+|   |   |   |   Volume >  108             0.465     7  2455.29    15.97    24.29
+|   |   |   |   |   Model >  72           0.479     3  2406.67    15.43    26.67
+|   |   |   |   |   Model <= 72           0.454     4  2491.75    16.38    22.50
+|   |   |   |   Volume <= 108             0.367     8  2154.75    15.26    30.00
+|   |   |   |   |   origin != 2           0.245     3  2309.33    16.93    30.00
+|   |   |   |   |   origin == 2           0.440     5  2062.00    14.26    30.00
+|   |   |   origin == 1                   0.312     8  2352.00    16.31    31.25
+|   |   |   |   Model >  76               0.349     4  2455.00    16.07    32.50
+|   |   |   |   Model <= 76               0.275     4  2249.00    16.55    30.00
+|   |   HpX <= 70                         0.229    25  2003.68    17.81    33.20
+|   |   |   Volume >  91                  0.283    12  2120.67    17.71    30.83
+|   |   |   |   Volume >  98              0.382     3  2220.00    15.00    30.00
+|   |   |   |   Volume <= 98              0.250     9  2087.56    18.61    31.11
+|   |   |   |   |   HpX >  66             0.237     4  2142.25    16.85    32.50
+|   |   |   |   |   HpX <= 66             0.260     5  2043.80    20.02    30.00
+|   |   |   Volume <= 91                  0.180    13  1895.69    17.91    35.38
+|   |   |   |   Volume >  85              0.207     4  1871.00    16.92    35.00
+|   |   |   |   Volume <= 85              0.168     9  1906.67    18.34    35.56
+|   |   |   |   |   Volume >  81          0.113     4  2047.50    19.85    37.50
+|   |   |   |   |   Volume <= 81          0.212     5  1794.00    17.14    34.00
+
+=== RESULT ===
+labelled  : 54   (start=4, budget=50)
+test rows : 199
+top 5 guess actual-disty=0.158  win=100/100</span>
+</pre>
+<p>What that means: with <strong>54 labels</strong> (~14% of 398 rows) plus <strong>5 oracle calls</strong> at the end, we landed in the top-tier "win=100" band. Across 30 seeds the picks span 0.075&ndash;0.160 disty, all inside the 0.35*sd cushion of the global best (0.075).</p>
+
+<div class="step"><div class="num">6</div><h2>Cross-validation</h2></div>
+<p>20-shuffle averaged metrics:</p>
+<pre class="term">
+<span class="prompt">$</span> make tree20 DATA=~/gits/moot/classify/heart.c.csv
+<span class="out">    n     pd     pf   prec    acc  class
+  945  0.743  0.237  0.727  0.754  &gt;50_1
+ 1115  0.763  0.257  0.778  0.754  &lt;50</span>
+<span class="prompt">$</span> make nb20 DATA=~/gits/moot/classify/heart.c.csv
+<span class="out">    n     pd     pf   prec    acc  class
+  945  0.808  0.125  0.846  0.845  &gt;50_1
+ 1115  0.875  0.192  0.844  0.845  &lt;50</span>
+</pre>
+
+<div class="step"><div class="num">7</div><h2>Where to go next</h2></div>
+<p style="margin-left: 0;">
+  <a href="example.html">Examples</a> &mdash; full walkthrough of each app with code.<br>
+  <a href="manual.html">Manual</a> &mdash; data sigils, config keys, file index, internals.<br>
+  <a href="../dot/manual.html">dot manual</a> &mdash; the underlying object machinery.
+</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

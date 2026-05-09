@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-gawk -f prep.awk "$1"
+DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+gawk -f "$DOT_DIR/prep.awk" "$1"

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dot &mdash; object sugar for gawk</title>
+<meta name="description" content="dot is a tiny gawk preprocessor. Object syntax in awk, half the characters.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dot">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dot</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="tour.html">Tour</a>
+      <a href="hello.html">Hello</a>
+      <a href="example.html">Example</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Object sugar for gawk.</h1>
+    <p class="tagline">
+      <strong>dot</strong> is one preprocessor and a 23-line runtime.
+      Pipe any source through <code>dot</code> and gawk sees normal awk.
+      Build polymorphic types in awk without writing <code>HEAP[it]["field"]</code> a hundred times.
+    </p>
+
+    <ul class="bullets">
+      <li><strong>Tiny.</strong> 10-line preprocessor, 23-line runtime, 61-line NUM/SYM types.</li>
+      <li><strong>One rule.</strong> A leading dot means object access. <code>.it.n</code> &rarr; <code>HEAP[it]["n"]</code>.</li>
+      <li><strong>Polymorphic.</strong> <code>add(it, x)</code> dispatches to <code>num_add</code> or <code>sym_add</code> via <code>.it.is</code>.</li>
+    </ul>
+
+    <h4 style="margin-top: 36px;">Syntax sample</h4>
+    <p style="margin-bottom: 8px;">A leading dot means object access. <code>.it.n</code> &rarr; <code>HEAP[it]["n"]</code>; bare <code>.x</code> &rarr; <code>HEAP[x]</code>.</p>
+
+    <div class="compare">
+      <div>
+        <h4>Plain gawk</h4>
+<pre><code class="language-c">function num_add(it, x,    d, d2) {
+  HEAP[it]["n"]++
+  d  = x - HEAP[it]["mu"]
+  HEAP[it]["mu"] += d / HEAP[it]["n"]
+  d2 = x - HEAP[it]["mu"]
+  HEAP[it]["m2"] += d * d2 }</code></pre>
+      </div>
+      <div>
+        <h4>dot</h4>
+<pre><code class="language-c">function num_add(it, x,    d, d2) {
+  .it.n++
+  d  = x - .it.mu
+  .it.mu += d / .it.n
+  d2 = x - .it.mu
+  .it.m2 += d * d2 }</code></pre>
+      </div>
+    </div>
+
+    <p style="margin-top: 18px;">
+       <a href="tour.html">Tour</a> &middot;
+       <a href="hello.html">12-line Hello</a> &middot;
+       <a href="example.html">Stats example</a> &middot;
+       <a href="manual.html">Manual</a>
+    </p>
+    <p style="margin-top: 12px; color: var(--fg-soft);">
+       Need machine learning on top? See <a href="../dotlearn/index.html">dotlearn</a>.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>
