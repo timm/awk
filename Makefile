@@ -23,7 +23,7 @@ pull: ## update from origin
 	git pull
 
 sh: ## launch dev shell (banner + etc/bash.rc if present)
-	@-echo -e $(CLS)$(cYELLOW); figlet -W -f slant gawk; \
+	@-echo -e $(CLS)$(cYELLOW); figlet -W -f slant awk; \
 	  echo -e $(cRESET)
 	@-bash --init-file $(ETC)/bash.rc -i
 
