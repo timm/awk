@@ -1,0 +1,79 @@
+-- vim: set ft=lawk et ts=2 sw=2 :
+-- showcase.lawk -- demonstrates every sugar in one file.
+-- generated for syntax-highlighting reference.
+
+use math   -- imports abs, sqrt, exp, log, floor, max, min, ... as bare names
+
+-- # constants and locals (.x = expr)
+.PI, E, EPS = 3.14159, 2.71828, 1e-9
+.greeting   = "hello"
+
+-- # exponent (** -> ^)
+.area = (r) => PI * r ** 2
+
+-- # inline arrow lambda, single expression, auto-return
+.inc = (x) => x + 1
+.add = (a, b) => a + b
+.lt  = (a, b) => a < b
+
+-- # block arrow lambda (multi-statement, ^ for explicit return, .. closes)
+.welcome = (name) =>
+  printf("%s, %s!\n", greeting, name)
+  ^"done" .
+
+-- # named function via NAME(args) =>
+fib(n) =>
+  if n < 2 then ^n end
+  ^fib(n-1) + fib(n-2) .
+
+-- # method-style def
+NUM(s, at) =>
+  ^{is="Num", txt=s, at=at, n=0, mu=0, m2=0} .
+
+NUM_add(c, x) =>
+  c.n  = c.n + 1
+  .d   = x - c.mu
+  c.mu = c.mu + d / c.n
+  c.m2 = c.m2 + d * (x - c.mu) .
+
+NUM_sd(c) =>
+  ^c.n < 2 and 0 or sqrt(c.m2 / (c.n - 1)) .
+
+-- # list comprehension
+.xs       = {1, 2, 3, 4, 5, 6, 7, 8}
+.squares  = [x * x for x in xs]
+.evens    = [x for x in xs]              -- pass-through
+.shifted  = [add(x, 10) for x in xs]
+
+-- # auto-pairs in 2-var for
+.tally = {a=1, b=2, c=3}
+for k, v in tally do printf("  %s=%d\n", k, v) end
+
+-- # nested lambdas inside comp
+.cubes = [((y) => y*y*y)(x) for x in xs]
+
+-- # mixing several sugars in one block
+sum_squares(t) =>
+  .total = 0
+  for _, v in ipairs(t) do total = total + v ** 2 end
+  ^total .
+
+-- # multiple end-closers via dots
+classify(c, x) =>
+  if x == "?" then
+    ^0
+  elseif c.is == "Num" then
+    if x > c.mu then ^1
+    else             ^-1 ...
+
+-- # main entry uses comprehension + arrow lambdas + auto-pairs
+main() =>
+  printf("area(2) = %.3f\n", area(2))
+  printf("fib(10) = %d\n", fib(10))
+  printf("squares = "); o(squares); print()
+  printf("cubes   = "); o(cubes); print()
+  .num = NUM("AGE", 1)
+  for _, x in ipairs(xs) do NUM_add(num, x) end
+  printf("Num: n=%d mu=%.2f sd=%.2f\n", num.n, num.mu, NUM_sd(num)) .
+
+main()

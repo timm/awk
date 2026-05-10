@@ -1,0 +1,37 @@
+-- hello.lawk -- demo all sugars.
+
+use math   -- imports abs, max, min, sqrt, ... as bare names
+
+-- inline arrow lambda (auto-return)
+.inc = (x) => x + 1
+print("inc(10) =", inc(10))
+
+-- block arrow lambda
+.add5 = (x) =>
+  ^x + 5 .
+
+print("add5(3) =", add5(3))
+
+-- exponent **
+print("2**10 =", 2**10)
+
+-- list comprehension
+.xs = {1, 2, 3, 4, 5}
+.squares = [x*x for x in xs]
+o(squares); print()
+
+-- comprehension + inline lambda
+.doubled = [((y) => y*2)(x) for x in xs]
+o(doubled); print()
+
+-- block named function via =>
+mean(t) =>
+  .s, n = 0, 0
+  for _, v in ipairs(t) do s = s + v; n = n + 1 end
+  ^s / n .
+
+printf("mean(squares) = %.2f\n", mean(squares))
+
+-- auto-pairs in 2-var for loop
+.tally = {a=1, b=2, c=3}
+for k, v in tally do printf("  %s=%d\n", k, v) end

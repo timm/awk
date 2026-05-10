@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# lawk -- transpile .lawk and run via lua. Caches transpiled .lua next
+# to source; re-transpiles only when source is newer than cache.
+#
+# Usage:
+#   lawk file.lawk [args...]    transpile (cached) then run
+#   lawk -c file.lawk           print transpiled source only
+
+set -e
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+TR="$HERE/transpile.lua"
+
+case "${1:-}" in
+  ""|-h|--help)
+    awk '/^# Usage:/{p=1} p&&!/^#/{exit} p{sub(/^# ?/,""); print}' "$0"
+    exit 0 ;;
+  -c)
+    [ -n "${2:-}" ] || { echo "lawk: -c needs FILE" >&2; exit 1; }
+    exec lua "$TR" "$2" ;;
+esac
+
+SRC="$1"; shift
+CACHE="${SRC%.lawk}.lua"
+[ "$CACHE" = "$SRC" ] && CACHE="$SRC.cache.lua"
+
+# (re)transpile if source newer than cache
+if [ ! -f "$CACHE" ] || [ "$SRC" -nt "$CACHE" ]; then
+  lua "$TR" "$SRC" "$CACHE"
+fi
+
+exec lua -e "package.path='$HERE/lua/?.lua;'..package.path; require'init'" "$CACHE" "$@"
