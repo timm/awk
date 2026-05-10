@@ -18,9 +18,11 @@
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
-      <a href="tour.html">Tour</a>
-      <a href="example.html">Examples</a>
+      <a href="install.html">Install</a>
       <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
       <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
     </nav>
   </div>
@@ -180,10 +182,10 @@ score = wins_score(d, row, W)   # 100 = within 0.35*sd of lo
     <tr><td><code>data.awk</code></td><td>~50</td><td>CSV ingest, sigils, <code>data_clone</code>, <code>data_feed</code></td></tr>
     <tr><td><code>dist.awk</code></td><td>~25</td><td><code>disty</code>, <code>distx</code>, <code>aha</code>, <code>mids</code></td></tr>
     <tr><td><code>tree.awk</code></td><td>~110</td><td>tree functions (binary cuts, balance filter)</td></tr>
-    <tr><td><code>tree-cli.awk</code></td><td>~15</td><td>CLI rules for <code>make tree</code></td></tr>
+    <tr><td><code>tree-cli.awk</code></td><td>~15</td><td>CLI driver for <code>dotlearn --demo tree</code></td></tr>
     <tr><td><code>treeshow.awk</code></td><td>~15</td><td>tree pretty-printer</td></tr>
     <tr><td><code>bayes.awk</code></td><td>~35</td><td>Naive Bayes functions</td></tr>
-    <tr><td><code>bayes-cli.awk</code></td><td>~12</td><td>CLI rules for <code>make nb</code></td></tr>
+    <tr><td><code>bayes-cli.awk</code></td><td>~12</td><td>CLI driver for <code>dotlearn --demo nb</code></td></tr>
     <tr><td><code>wins.awk</code></td><td>~25</td><td>percentile scorer</td></tr>
     <tr><td><code>active.awk</code></td><td>~140</td><td>active learning pipeline</td></tr>
     <tr><td><code>metrics.awk</code></td><td>~30</td><td>per-class confusion matrix</td></tr>

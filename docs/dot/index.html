@@ -19,30 +19,58 @@
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
-      <a href="tour.html">Tour</a>
-      <a href="hello.html">Hello</a>
-      <a href="example.html">Example</a>
       <a href="install.html">Install</a>
       <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
       <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
     </nav>
   </div>
 </header>
 
+<div style="background: var(--accent-soft); border-bottom: 1px solid var(--line); padding: 10px 0; text-align: center; font-size: 14px; color: var(--accent-dark);">
+  <div class="container">
+    Zero to running a polymorphic gawk program. Real prompts, real output, copy-pastable.
+  </div>
+</div>
+
 <section class="hero">
   <div class="container">
     <h1>Object sugar for gawk.</h1>
+
+    <div class="origin" style="margin: 18px 0 28px; padding: 18px 22px; border-left: 3px solid var(--accent); background: var(--bg-soft); font-style: italic;">
+      <p style="margin: 0;">Once upon a time (I think it was Thursday) I lamented to Claude Code that gawk can't return arrays. It suggested a global-heap trick: functions return the integer id of an instance stored on an external heap. In theory, horrible. In practice, surprisingly useful.</p>
+      <p style="margin: 10px 0 0;">So we tried it. A few hours porting some old code to this <em>objects on an external heap</em> idea, and the result was a tiny gawk system &mdash; the runtime started at a dozen lines; the preprocessor was three &mdash; that, as promised, was surprisingly useful.</p>
+      <p style="margin: 10px 0 0;">Here, let me show you&hellip;</p>
+    </div>
+
     <p class="tagline">
-      <strong>dot</strong> is one preprocessor and a 23-line runtime.
+      <strong>dot</strong> is one preprocessor and a 9-line runtime.
       Pipe any source through <code>dot</code> and gawk sees normal awk.
       Build polymorphic types in awk without writing <code>HEAP[it]["field"]</code> a hundred times.
     </p>
 
     <ul class="bullets">
-      <li><strong>Tiny.</strong> 10-line preprocessor, 23-line runtime, 61-line NUM/SYM types.</li>
+      <li><strong>Tiny.</strong> 10-line preprocessor, 9-line runtime (<code>new</code>, <code>arr</code>, <code>zap</code>), small helper lib (<code>rogues</code>, <code>o</code>, <code>_oo</code>).</li>
       <li><strong>One rule.</strong> A leading dot means object access. <code>.it.n</code> &rarr; <code>HEAP[it]["n"]</code>.</li>
-      <li><strong>Polymorphic.</strong> <code>add(it, x)</code> dispatches to <code>num_add</code> or <code>sym_add</code> via <code>.it.is</code>.</li>
+      <li><strong>Foundation only.</strong> Concrete types (Num/Sym/Data) live in <a href="../dotcols/index.html">dotcols</a>; ML in <a href="../dotlearn/index.html">dotlearn</a>. Each layer is its own one-file binary.</li>
     </ul>
+
+    <h4 style="margin-top: 36px;">Smallest dot program I know</h4>
+    <p style="margin-bottom: 8px;">Per-column running mean of any whitespace-separated table. One object, three lines of dot syntax:</p>
+<pre><code class="language-c">BEGIN { x = new("plain") }
+      { for(c=1;c&lt;=NF;c++) { .x.n[c]++; .x.mu[c] += ($c-.x.mu[c])/.x.n[c] } }
+END   { for(c=1;c&lt;=NF;c++) print "col", c, .x.mu[c] }</code></pre>
+<pre><code class="language-bash">$ printf "10 1 100\n20 2 200\n30 3 300\n40 4 400\n50 5 500\n" | dot tiny.awk
+col 1 30
+col 2 3
+col 3 300</code></pre>
+    <p style="margin-top: 8px; color: var(--fg-soft); font-size: 14px;">
+      Why <code>new("plain")</code>? It allocates one object id so <code>.x.n[c]</code> and <code>.x.mu[c]</code>
+      preprocess into <code>HEAP[x]["n"][c]</code> and <code>HEAP[x]["mu"][c]</code> &mdash; otherwise <code>n</code> and <code>mu</code>
+      would both be unset (= <code>0</code>) and collide on the same <code>HEAP</code> slot.
+    </p>
 
     <h4 style="margin-top: 36px;">Syntax sample</h4>
     <p style="margin-bottom: 8px;">A leading dot means object access. <code>.it.n</code> &rarr; <code>HEAP[it]["n"]</code>; bare <code>.x</code> &rarr; <code>HEAP[x]</code>.</p>
@@ -50,32 +78,31 @@
     <div class="compare">
       <div>
         <h4>Plain gawk</h4>
-<pre><code class="language-c">function num_add(it, x,    d, d2) {
+<pre><code class="language-c">function num_add(it, x,    d) {
   HEAP[it]["n"]++
-  d  = x - HEAP[it]["mu"]
+   d              = x - HEAP[it]["mu"]
   HEAP[it]["mu"] += d / HEAP[it]["n"]
-  d2 = x - HEAP[it]["mu"]
-  HEAP[it]["m2"] += d * d2 }</code></pre>
+  HEAP[it]["m2"] += d * (x - HEAP[it]["mu"]) }</code></pre>
       </div>
       <div>
         <h4>dot</h4>
-<pre><code class="language-c">function num_add(it, x,    d, d2) {
+<pre><code class="language-c">function num_add(it, x,    d) {
   .it.n++
-  d  = x - .it.mu
+   d      = x - .it.mu
   .it.mu += d / .it.n
-  d2 = x - .it.mu
-  .it.m2 += d * d2 }</code></pre>
+  .it.m2 += d * (x - .it.mu) }</code></pre>
       </div>
     </div>
 
     <p style="margin-top: 18px;">
-       <a href="tour.html">Tour</a> &middot;
-       <a href="hello.html">12-line Hello</a> &middot;
-       <a href="example.html">Stats example</a> &middot;
-       <a href="manual.html">Manual</a>
+       <a href="install.html">Install</a> &middot;
+       <a href="tour.html">Tutorial</a> &middot;
+       <a href="example.html">Hello example</a> &middot;
+       <a href="manual.html">Manual</a> &middot;
+       <a href="tests.html">Tests</a>
     </p>
     <p style="margin-top: 12px; color: var(--fg-soft);">
-       Need machine learning on top? See <a href="../dotlearn/index.html">dotlearn</a>.
+       Need column types? <a href="../dotcols/index.html">dotcols</a>. ML? <a href="../dotlearn/index.html">dotlearn</a>.
     </p>
   </div>
 </section>

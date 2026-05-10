@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotcols &mdash; Tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotcols">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotcols</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dotcols">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Annotated tests</h1>
+<p class="lead">17 smoke tests for <code>dotcols</code>. Verifies dot's runtime is bundled correctly, plus exercises Num, Sym, Data, dispatch, and the bundled <code>stats</code> demo.</p>
+
+<pre><code class="language-bash">cd dotcols
+./tests/test.sh
+# All 17 tests passed.</code></pre>
+
+<h2>1. Build &amp; help</h2>
+<pre><code class="language-bash">contains "build.sh runs"     "built dotcols" "$out"
+contains "no args -> usage"  "Usage:"        "$($DC 2&gt;&amp;1)"
+contains "--help has --demo"  "--demo"       "$($DC --help)"
+contains "--help has --get-data" "--get-data" "$($DC --help)"
+contains "--demos lists stats" "stats"       "$($DC --demos)"</code></pre>
+<p><strong>Asserts:</strong> binary builds; CLI dispatcher is wired (every <code>--</code> branch reachable); <code>--demos</code> auto-discovers <code>demos/stats/</code>.</p>
+
+<h2>2. Inherits dot's runtime</h2>
+<p>dotcols's binary embeds dot's <code>lib/*.awk</code>. These tests prove it.</p>
+<pre><code class="language-bash">eq "new + .field still works"  "7"  "$(run_inline 'BEGIN{N=new("plain"); .N.n=7; printf "%d\n", .N.n}')"
+eq "o(5.0) still collapses"    "5"  "$(run_inline 'BEGIN{o(5.0); print ""}')"</code></pre>
+<p><strong>Asserts:</strong> <code>new()</code>, <code>.field</code> sugar, and the printer <code>o</code> all work inside dotcols. If the build forgot to include dot's libs, these fail with "function not defined".</p>
+
+<h2>3. Num type &mdash; Welford running mean + stdev</h2>
+<pre><code class="language-bash">eq "num via add()" "30 15.811" "$(run_inline '
+  BEGIN { N = new("num")
+          add(N,10,1); add(N,20,1); add(N,30,1); add(N,40,1); add(N,50,1)
+          printf "%d %.3f\n", mid(N), var(N) }')"
+
+eq "num mid alias" "30"        "$(run_inline '
+  BEGIN { N = new("num")
+          for (i=1;i&lt;=5;i++) add(N,i*10,1)
+          printf "%d\n", mid(N) }')"</code></pre>
+<p><strong>Asserts:</strong></p>
+<ul style="margin-left: 24px;">
+<li>5 numbers (10, 20, ..., 50) &rarr; mean=30, sample stdev=15.811 (uses n-1 denominator, Welford's stable algorithm).</li>
+<li><code>mid(N)</code> returns the same mean &mdash; polymorphic dispatch from <code>mid</code> &rarr; <code>num_mid</code> via <code>.N.is</code>.</li>
+</ul>
+
+<h2>4. Sym type &mdash; counts table, mode, entropy</h2>
+<pre><code class="language-bash">eq "sym mode"      "b"   "$(run_inline 'BEGIN{S=new("sym"); add(S,"a",1); add(S,"b",1); add(S,"b",1); printf "%s\n", mid(S)}')"
+eq "sym entropy>0" "yes" "$(run_inline 'BEGIN{S=new("sym"); add(S,"a",1); add(S,"b",1); printf "%s\n", (var(S)&gt;0?"yes":"no")}')"</code></pre>
+<p><strong>Asserts:</strong> Sym's mode picks the most-frequent key (b appeared twice); entropy is positive when the distribution isn't degenerate. Same dispatch shape as Num &mdash; same <code>add</code> / <code>mid</code> / <code>var</code> calls, different per-type implementations.</p>
+
+<h2>5. Data type &mdash; CSV ingest</h2>
+<pre><code class="language-bash">eq "data ingests rows" "303" "$(run_inline '
+  BEGIN { d = new("data"); FS = " *, *" }
+  NR==1 { data_head(d, $0); next }
+        { data_read(d, 1) }
+  END   { printf "%d\n", .d.nrows }
+  ' demos/stats/sample.csv)"</code></pre>
+<p><strong>Asserts:</strong> Data parses the heart-disease CSV header (14 columns, classify <code>num!</code>) and ingests all 303 data rows. <code>.d.nrows</code> is updated in-place via <code>data_read</code>. Any cell going to a wrong-typed column would crash earlier.</p>
+
+<h2>6. The bundled stats demo end-to-end</h2>
+<pre><code class="language-bash">out=$($DC --demo stats)
+contains "stats demo header"   "column"    "$out"
+contains "stats demo body"     "AGE"       "$out"
+contains "stats demo bottom"   "num!"      "$out"</code></pre>
+<p><strong>Asserts:</strong> the bundled demo produces the expected per-column summary. First line has "column" header, body includes "AGE" (an UPPER numeric column &rarr; mean+stdev), bottom has "num!" (the classification target). End-to-end smoke for: dispatcher &rarr; build_gawk_args &rarr; preprocess + load &rarr; gawk runs over sample.csv &rarr; output.</p>
+
+<h2>7. Errors</h2>
+<pre><code class="language-bash">out=$($DC --demo nonesuch 2&gt;&amp;1 || true)
+contains "missing demo errors" "no such demo" "$out"</code></pre>
+<p><strong>Asserts:</strong> bad demo name fails with a readable error, not a gawk crash.</p>
+
+<h2>What this proves</h2>
+<ul style="margin-left: 24px;">
+<li>dot's runtime is correctly bundled inside dotcols (no missing functions).</li>
+<li>Polymorphic dispatch works: same <code>add</code>/<code>mid</code>/<code>var</code> calls, two implementations.</li>
+<li>Welford gives sample stdev (n-1), not population stdev.</li>
+<li>Data ingests CSVs end-to-end and counts rows accurately.</li>
+<li>The bundled demo runs through the entire pipeline cleanly.</li>
+</ul>
+
+<p>If you change anything in <code>lib/numsym.awk</code> or <code>lib/data.awk</code>, run <code>./tests/test.sh</code>. Two minutes round-trip.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

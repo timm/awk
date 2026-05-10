@@ -18,9 +18,11 @@
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
-      <a href="tour.html">Tour</a>
-      <a href="example.html">Examples</a>
+      <a href="install.html">Install</a>
       <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
       <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
     </nav>
   </div>
@@ -42,35 +44,36 @@
 67,male,asympt,160,286,f,left_vent_hyper,108,yes,1.5,flat,3,normal,&gt;50_1</code></pre>
 
 <h3>Run</h3>
-<pre><code class="language-bash">cd dotlearn
-make tree DATA=$HOME/gits/moot/classify/heart.c.csv</code></pre>
+<pre><code class="language-bash">dotlearn --demo tree                                # uses bundled sample (heart.c.csv)
+dotlearn --demo tree data/classify/heart.c.csv      # explicit data file
+dotlearn --demo tree | gawk -f tools/metrics.awk    # add metrics summary</code></pre>
 
-<h3>Output</h3>
+<h3>Output (raw, "pred,actual" lines)</h3>
+<pre><code class="language-bash">&lt;50,&lt;50
+&lt;50,&lt;50
+&gt;50_1,&gt;50_1
+&lt;50,&gt;50_1
+... (one row per held-out test row)</code></pre>
+
+<p>Pipe to <code>tools/metrics.awk</code> for per-class summary:</p>
 <pre><code class="language-bash">    n     pd     pf   prec    acc  class
    48  0.625  0.145  0.789  0.748  &gt;50_1
    55  0.855  0.375  0.723  0.748  &lt;50</code></pre>
-
 <p><code>n</code> = test count, <code>pd</code> = recall, <code>pf</code> = false-alarm, <code>prec</code> = precision, <code>acc</code> = accuracy. Same metrics for both classification and regression (with continuous targets, <code>class</code> column shows raw distance values).</p>
-
-<h3>Variants</h3>
-<pre><code class="language-bash">make tree-raw       # skip metrics, see "pred,actual" lines
-make tree20         # 20 shuffled splits, averaged metrics</code></pre>
 
 <!-- ============================================================ -->
 <h2>nb</h2>
 <p>Naive Bayes. Same shape as tree.</p>
 
 <h3>Run</h3>
-<pre><code class="language-bash">make nb DATA=$HOME/gits/moot/classify/heart.c.csv</code></pre>
+<pre><code class="language-bash">dotlearn --demo nb                              # uses bundled sample (heart.c.csv)
+dotlearn --demo nb | gawk -f tools/metrics.awk  # add metrics summary</code></pre>
 
-<h3>Output</h3>
+<h3>Output (with metrics)</h3>
 <pre><code class="language-bash">    n     pd     pf   prec    acc  class
    48  0.729  0.091  0.875  0.825  &gt;50_1
    55  0.909  0.271  0.794  0.825  &lt;50</code></pre>
 <p>acc=0.825 on heart.c (vs tree=0.748). Naive Bayes wins here because heart has many low-cardinality symbolic columns.</p>
-
-<h3>Variants</h3>
-<pre><code class="language-bash">make nb20           # 20-shuffle cross-val</code></pre>
 
 <!-- ============================================================ -->
 <h2>acquire</h2>
@@ -90,7 +93,8 @@ make tree20         # 20 shuffled splits, averaged metrics</code></pre>
 </ol>
 
 <h3>Run</h3>
-<pre><code class="language-bash">make acquire DATA=$HOME/gits/moot/optimize/misc/auto93.csv</code></pre>
+<pre><code class="language-bash">dotlearn --demo acquire                              # uses bundled sample (auto93.csv)
+dotlearn --demo acquire data/regression/auto93.csv   # explicit data file</code></pre>
 
 <h3>Output</h3>
 <pre><code class="language-bash">wins  lo=0.075  med=0.535  sd=0.266

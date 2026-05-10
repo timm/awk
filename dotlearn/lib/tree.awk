@@ -18,10 +18,10 @@ function ycol(d, rows,    y, r) {
   return y }
 
 function spread(d, rows,    y, v) {
-  y = ycol(d, rows); v = var(y); free(y); return v }
+  y = ycol(d, rows); v = var(y); zap(y); return v }
 
 function leaf_pred(d, rows,    y, v) {
-  y = ycol(d, rows); v = mid(y); free(y); return v }
+  y = ycol(d, rows); v = mid(y); zap(y); return v }
 
 # for each y-col, compute mean over rows, store in .n.ymids[name].
 function ymids(d, rows, n,   i, rr, c, name) {
@@ -30,7 +30,7 @@ function ymids(d, rows, n,   i, rr, c, name) {
     c    = new(.d.nump[i] ? "num" : "sym")
     for (rr in rows) add(c, .d.rows[rows[rr]][i], 1)
     .n.ymids[name] = mid(c)
-    free(c) } }
+    zap(c) } }
 
 # --- candidate cuts for one column ---------------------------------
 # numeric -> [median];  symbolic -> [each distinct value]
@@ -75,7 +75,7 @@ function try_split(d, c, cut, rows, l, r,
   if (ll == 0 || rl == 0) return -1
   ly    = ycol(d, l); ry = ycol(d, r)
   score = .ly.n * var(ly) + .ry.n * var(ry)
-  free(ly); free(ry)
+  zap(ly); zap(ry)
   return score }
 
 # --- tree -----------------------------------------------------------

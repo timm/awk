@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotcols &mdash; Install</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotcols">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotcols</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dotcols">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Install dotcols</h1>
+<p class="lead">One self-contained bash binary. Bundles dot's runtime + dotcols's column types + Num/Sym/Data + the <code>stats</code> demo.</p>
+
+<h2>Requirements</h2>
+<table>
+  <tr><th>Tool</th><th>Version</th><th>Why</th></tr>
+  <tr><td><code>gawk</code></td><td>&ge; 4.x</td><td>indirect calls (<code>@fn</code>), <code>FUNCTAB</code>, <code>asorti</code></td></tr>
+  <tr><td><code>bash</code></td><td>&ge; 4.x</td><td>arrays, process substitution <code>&lt;(...)</code></td></tr>
+  <tr><td><code>curl</code></td><td>any</td><td><code>--get-data</code> fetcher</td></tr>
+</table>
+
+<h2>Install</h2>
+<pre><code class="language-bash">curl -sL https://raw.githubusercontent.com/timm/awk/master/dotcols/dotcols -o dotcols
+chmod +x dotcols</code></pre>
+<p>Or install on PATH:</p>
+<pre><code class="language-bash">curl -sL https://raw.githubusercontent.com/timm/awk/master/dotcols/dotcols -o ~/.local/bin/dotcols
+chmod +x ~/.local/bin/dotcols</code></pre>
+
+<h2>Verify</h2>
+<p>One command. The bundled <code>stats</code> demo runs against its sample CSV (heart-disease, 14 columns):</p>
+<pre><code class="language-bash">./dotcols --demo stats | head -3</code></pre>
+<p>Expect:</p>
+<pre><code class="language-bash">column                      n          mid       spread
+AGE                       303       54.366        9.082
+sex                       303         male        0.624</code></pre>
+
+<h2>Get example data</h2>
+<p>Pulls 30 curated CSVs (10 classification, 10 regression, 10 optimization) from the <a href="https://github.com/timm/moot">moot</a> data repo into <code>./data/</code>:</p>
+<pre><code class="language-bash">./dotcols --get-data</code></pre>
+<p>Layout:</p>
+<pre><code class="language-bash">data/classify/    iris wine glass heart.c diabetes breast.w ionosphere soybean zoo sonar
+data/regression/  housing autompg auto93 abalone cpu.act bodyfat machine.cpu cal.housing fishcatch servo
+data/optimize/    Apache_AllMeasurements HSMGP_num SQL_AllMeasurements rs-6d-c3_obj1 rs-6d-c3_obj2 sol-6d-c2-obj1 SS-A SS-B SS-C SS-D</code></pre>
+
+<h2>Usage</h2>
+<pre><code class="language-bash">dotcols FILE.awk [DATA...]    # run rewritten FILE.awk on DATA (or stdin)
+dotcols a.awk b.awk DATA      # multi-file run; .awk args go through prep
+cat DATA | dotcols FILE.awk   # stdin works too
+dotcols -c FILE.awk           # print rewritten source only
+dotcols --demo NAME [DATA]    # run demos/NAME/*.awk on DATA (or sample.*)
+dotcols --demos               # list available demos under ./demos/
+dotcols --show                # dump bundled lib/*.awk (post-prep)
+dotcols --get-data            # fetch 30 curated CSVs into ./data/
+dotcols --help                # full help</code></pre>
+
+<h3>Try it on your data dirs</h3>
+<p>One command each. All three call <code>--demo stats</code> on a different CSV:</p>
+<pre><code class="language-bash"># classification: 4 numeric features + species class
+dotcols --demo stats data/classify/iris.csv
+
+# regression: Boston housing prices
+dotcols --demo stats data/regression/housing.csv
+
+# optimization: Apache web-server config tuning
+dotcols --demo stats data/optimize/Apache_AllMeasurements.csv</code></pre>
+
+<h2>Prefer git?</h2>
+<pre><code class="language-bash">git clone https://github.com/timm/awk
+cd awk/dotcols
+./build.sh           # rebuild the dotcols binary from sources</code></pre>
+<p>The repo holds the modular sources (<code>lib/numsym.awk</code>, <code>lib/data.awk</code>) plus <code>build.sh</code>, which bundles them with <code>../dot/lib/*</code> into the single-file <code>dotcols</code> binary.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotcols &mdash; column types for dot</title>
+<meta name="description" content="dotcols adds Num/Sym column types and a Data CSV table on top of dot.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotcols">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotcols</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dotcols">Source</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Column types for dot.</h1>
+
+    <p class="tagline">
+      <strong>dotcols</strong> adds three things on top of <a href="../dot/index.html">dot</a>:
+      <strong>Num</strong> (running mean + stdev via Welford),
+      <strong>Sym</strong> (counts table, mode, entropy),
+      and <strong>Data</strong> (a CSV table that auto-builds one Num or Sym per column).
+    </p>
+
+    <ul class="bullets">
+      <li><strong>Polymorphic.</strong> One <code>add(c, x, train)</code> call dispatches to <code>num_add</code> or <code>sym_add</code> via <code>.c.is</code>.</li>
+      <li><strong>One pass.</strong> Welford for Num, counts for Sym &mdash; both update in O(1) per row.</li>
+      <li><strong>Self-contained.</strong> The <code>dotcols</code> binary bundles all of dot's runtime plus these libs. One file install.</li>
+      <li><strong>Bundled demo.</strong> <code>dotcols --demo stats data.csv</code> prints per-column summary.</li>
+    </ul>
+
+    <h4 style="margin-top: 36px;">What it adds</h4>
+
+    <pre><code class="language-c"># a single CSV ingest using dotcols
+function header(    i) {
+  for (i = 1; i &lt;= NF; i++) {
+    NAME[i] = $i
+    COL[i]  = new($i ~ /^[A-Z]/ ? "num" : "sym") } }   # new from dot
+
+function ingest(    i) {
+  for (i = 1; i &lt;= NF; i++) add(COL[i], $i, 1) }     # add from dotcols
+
+END {
+  for (i = 1; i &lt;= length(NAME); i++)
+    printf "%s\tn=%d\tmid=%s\tspread=%g\n",
+      NAME[i], .COL[i].n, mid(COL[i]), var(COL[i]) }   # mid/var from dotcols</code></pre>
+
+    <p>Same <code>add()</code>, <code>mid()</code>, <code>var()</code> calls work whether the column is Num or Sym. Dispatch is one line per op &mdash; concat type tag with op name, indirect-call via <code>@fn</code>.</p>
+
+    <h4 style="margin-top: 28px;">Quick install + demo</h4>
+<pre><code class="language-bash">curl -sL https://raw.githubusercontent.com/timm/awk/master/dotcols/dotcols -o dotcols
+chmod +x dotcols
+./dotcols --get-data       # 30 curated CSVs into ./data/
+./dotcols --demo stats     # bundled stats demo on its sample.csv</code></pre>
+
+    <p style="margin-top: 18px;">
+      <a href="install.html">Install</a> &middot;
+      <a href="example.html">Stats walkthrough</a> &middot;
+      <a href="manual.html">Manual</a>
+    </p>
+    <p style="margin-top: 12px; color: var(--fg-soft);">
+      Need ML on top? See <a href="../dotlearn/index.html">dotlearn</a>: trees, naive Bayes, active learning.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

@@ -18,11 +18,11 @@
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
-      <a href="tour.html">Tour</a>
-      <a href="hello.html">Hello</a>
-      <a href="example.html">Example</a>
       <a href="install.html">Install</a>
       <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
       <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
     </nav>
   </div>
@@ -39,14 +39,13 @@
 <span class="prompt">$</span> brew install gawk        <span class="comment"># macOS</span>
 <span class="prompt">$</span> sudo apt install gawk    <span class="comment"># debian/ubuntu</span></pre>
 
-<div class="step"><div class="num">2</div><h2>Clone the repo</h2></div>
+<div class="step"><div class="num">2</div><h2>Install the binary</h2></div>
 <pre class="term">
-<span class="prompt">$</span> git clone https://github.com/timm/awk
-<span class="prompt">$</span> cd awk/dot
-<span class="prompt">$</span> ls
-<span class="out">dot          dot.awk    hello.awk   Makefile
-numsym.awk   prep.awk   stats.awk</span>
-<span class="prompt">$</span> export PATH=$PWD:$PATH</pre>
+<span class="prompt">$</span> curl -sL https://raw.githubusercontent.com/timm/awk/master/dot/dot -o dot
+<span class="prompt">$</span> chmod +x dot
+<span class="prompt">$</span> ./dot --demo hello
+<span class="out">n=5 mean=30.000</span></pre>
+<p>One file. Bundles the preprocessor, runtime, and helpers as heredocs.</p>
 
 <div class="step"><div class="num">3</div><h2>Write a one-line dot program</h2></div>
 <p>No objects yet &mdash; just the preprocessor's two rules:</p>
@@ -58,54 +57,36 @@ EOF</pre>
 
 <div class="step"><div class="num">4</div><h2>See what dot rewrites it to</h2></div>
 <pre class="term">
-<span class="prompt">$</span> dot tour1.awk
+<span class="prompt">$</span> ./dot -c tour1.awk
 <span class="out">BEGIN { HEAP[me]["name"] = "tim"; HEAP[me]["job"] = "prof"
         print HEAP[me]["name"], HEAP[me]["job"] }</span></pre>
 <p>Two rules: <code>.me.name</code> &rarr; <code>HEAP[me]["name"]</code>; bare <code>.me</code> &rarr; <code>HEAP[me]</code>.</p>
 
-<div class="step"><div class="num">5</div><h2>Pipe the rewrite into gawk</h2></div>
+<div class="step"><div class="num">5</div><h2>Run it</h2></div>
 <pre class="term">
-<span class="prompt">$</span> gawk -f &lt;(dot tour1.awk)
+<span class="prompt">$</span> ./dot tour1.awk
 <span class="out">tim prof</span></pre>
+<p>The <code>dot</code> binary preprocesses the file in a tempdir, then <code>gawk -f</code>'s it for you.</p>
 
-<div class="step"><div class="num">6</div><h2>Add a polymorphic object</h2></div>
-<p>A running mean using <code>new()</code> from <code>dot.awk</code>:</p>
+<div class="step"><div class="num">6</div><h2>Add an object</h2></div>
+<p>A running mean using <code>new()</code> from dot's runtime:</p>
 <pre class="term">
 <span class="prompt">$</span> cat &gt; tour2.awk &lt;&lt;'EOF'
-function num_init(it)   { .it.n=0; .it.mu=0; return it }
-function num_add(it, x) { .it.n++; .it.mu += (x - .it.mu)/.it.n }
-
-BEGIN { N = new("num") }
-      { num_add(N, $1) }
+BEGIN { N = new("plain") }
+      { .N.n++; .N.mu += ($1 - .N.mu) / .N.n }
 END   { printf "n=%d mean=%.2f\n", .N.n, .N.mu }
 EOF
-<span class="prompt">$</span> printf "10\n20\n30\n40\n50\n" \
-  | gawk -f &lt;(dot dot.awk) -f &lt;(dot tour2.awk)
+<span class="prompt">$</span> printf "10\n20\n30\n40\n50\n" | ./dot tour2.awk
 <span class="out">n=5 mean=30.00</span></pre>
-<p>What happened: <code>new("num")</code> allocated ID 1, set <code>.it.is="num"</code>, called <code>num_init</code>. Each row called <code>num_add</code>. <code>END</code> printed <code>.N.n</code> and <code>.N.mu</code>.</p>
+<p>What happened: <code>new("plain")</code> allocated ID 1, set <code>HEAP[1]["is"]="plain"</code>. Each row updated <code>.N.n</code> and <code>.N.mu</code>. <code>END</code> printed them. No type system needed &mdash; just struct sugar over <code>HEAP</code>.</p>
 
-<div class="step"><div class="num">7</div><h2>Use the bundled NUM/SYM types</h2></div>
-<p><code>numsym.awk</code> defines <code>num</code> + <code>sym</code> types and the polymorphic dispatchers <code>add</code>, <code>like</code>, <code>mid</code>, <code>var</code>. <code>stats.awk</code> uses them to compute per-column stats on a CSV:</p>
-<pre class="term">
-<span class="prompt">$</span> head -2 ~/gits/moot/classify/heart.c.csv
-<span class="out">AGE,sex,cp,TRESTBPS,CHOL,fbs,...,num!
-63,male,typ_angina,145,233,t,...,&lt;50</span>
-<span class="prompt">$</span> make stats DATA=~/gits/moot/classify/heart.c.csv
-<span class="out">column                      n          mid       spread
-AGE                       303       54.366        9.082
-sex                       303         male        0.624
-cp                        303       asympt        1.206
-TRESTBPS                  303      131.624       17.538
-CHOL                      303      246.264       51.831
-...</span></pre>
-<p>UPPERCASE columns are numeric (mean / stdev). Lowercase columns are symbolic (mode / entropy). Same <code>add()</code> call dispatches to the right type via <code>.it.is</code>.</p>
-
-<div class="step"><div class="num">8</div><h2>Where to go next</h2></div>
+<div class="step"><div class="num">7</div><h2>Where to go next</h2></div>
 <p style="margin-left: 0;">
-  <a href="hello.html">Hello</a> &mdash; smallest single-file program.<br>
-  <a href="example.html">Example</a> &mdash; the <code>stats.awk</code> walkthrough in detail.<br>
+  <a href="example.html">Example</a> &mdash; <code>hello.awk</code> walkthrough with pre/post rewrite tables.<br>
+  <a href="tests.html">Tests</a> &mdash; annotated test suite, doubles as 26 mini usage snippets.<br>
   <a href="manual.html">Manual</a> &mdash; preprocessor rules, runtime API, conventions, limitations.<br>
-  <a href="../dotlearn/tour.html">dotlearn tour</a> &mdash; build a decision tree on top of dot.
+  <a href="../dotcols/index.html">dotcols</a> &mdash; Num/Sym/Data column types on top of dot.<br>
+  <a href="../dotlearn/index.html">dotlearn</a> &mdash; ML on top of dotcols: trees, naive Bayes, active learning.
 </p>
 
 </div>

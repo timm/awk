@@ -22,6 +22,17 @@ body.tool-dot {
   --accent-soft: #cffafe;
 }
 
+/* dotcols: amber, distinct from cyan + violet */
+body.tool-dotcols {
+  --accent: #d97706;
+  --accent-dark: #b45309;
+  --accent-soft: #fef3c7;
+  --bg-alt: #fffbeb;
+  --code-bg: #fef9e7;
+  --line: #fde68a;
+  --line-soft: #fef3c7;
+}
+
 /* dotlearn: violet, warmer code bg */
 body.tool-dotlearn {
   --accent: #7c3aed;

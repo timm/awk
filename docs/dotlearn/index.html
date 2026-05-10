@@ -19,9 +19,11 @@
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
-      <a href="tour.html">Tour</a>
-      <a href="example.html">Examples</a>
+      <a href="install.html">Install</a>
       <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
       <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
     </nav>
   </div>
@@ -43,7 +45,7 @@
           Decision / regression tree. Binary cuts, balance filter, info-gain
           splits. Same code does classification (sym y) and regression (num y).
         </p>
-        <p style="margin: 0;"><code>make tree</code></p>
+        <p style="margin: 0;"><code>dotlearn --demo tree</code></p>
       </div>
       <div>
         <h4>nb</h4>
@@ -51,7 +53,7 @@
           Naive Bayes classifier. Per-class column stats, m-estimate / k-estimate
           smoothing, log-likelihood prediction. Streaming: train then test in one pass.
         </p>
-        <p style="margin: 0;"><code>make nb</code></p>
+        <p style="margin: 0;"><code>dotlearn --demo nb</code></p>
       </div>
     </div>
 
@@ -64,7 +66,7 @@
           Predict test set. Top-5 picks scored against full-data percentiles.
           On auto93: <strong>~95 wins</strong> with 14% of data labelled.
         </p>
-        <p style="margin: 0;"><code>make acquire</code></p>
+        <p style="margin: 0;"><code>dotlearn --demo acquire</code></p>
       </div>
     </div>
 

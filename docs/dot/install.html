@@ -18,11 +18,11 @@
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
-      <a href="tour.html">Tour</a>
-      <a href="hello.html">Hello</a>
-      <a href="example.html">Example</a>
       <a href="install.html">Install</a>
       <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
       <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
     </nav>
   </div>
@@ -37,34 +37,49 @@
 <h2>Requirements</h2>
 <table>
   <tr><th>Tool</th><th>Version</th><th>Why</th></tr>
-  <tr><td><code>gawk</code></td><td>&ge; 4.x</td><td>indirect calls (<code>@fn</code>), <code>FUNCTAB</code>, <code>SYMTAB</code></td></tr>
-  <tr><td><code>bash</code></td><td>&ge; 4.x</td><td>process substitution <code>&lt;(...)</code></td></tr>
-  <tr><td><code>make</code></td><td>any</td><td>demo targets</td></tr>
+  <tr><td><code>gawk</code></td><td>&ge; 4.x</td><td>indirect calls (<code>@fn</code>), <code>FUNCTAB</code>, <code>SYMTAB</code>, <code>asorti</code></td></tr>
+  <tr><td><code>bash</code></td><td>&ge; 4.x</td><td>arrays, process substitution <code>&lt;(...)</code></td></tr>
 </table>
 
 <p><strong>Note on gawk 5.4.0:</strong> the preprocessor avoids <code>gensub(...,"g")</code> due to a bug where the second match's captures come back empty. A <code>match</code>/<code>substr</code> loop is used instead.</p>
 
-<h2>macOS</h2>
-<pre><code class="language-bash">brew install gawk</code></pre>
-<p>Default <code>/bin/sh</code> on macOS is bash 3.x &mdash; too old for <code>&lt;(...)</code>. Run from <code>bash</code> or <code>zsh</code>, not <code>sh</code>.</p>
-
-<h2>Linux</h2>
-<pre><code class="language-bash">sudo apt install gawk    # debian/ubuntu
+<h2>Get gawk</h2>
+<pre><code class="language-bash">brew install gawk        # macOS
+sudo apt install gawk    # debian/ubuntu
 sudo dnf install gawk    # fedora</code></pre>
+<p>Default <code>/bin/sh</code> on macOS is bash 3.x &mdash; too old for <code>&lt;(...)</code>. Run <code>dot</code> from <code>bash</code> or <code>zsh</code>, not <code>sh</code>.</p>
 
-<h2>Clone &amp; run</h2>
+<h2>Install</h2>
+<p>One file, ~180 lines. The <code>dot</code> binary is a self-contained bash script with the preprocessor, runtime, and helper library bundled inside as heredocs. No directory. No Makefile.</p>
+<pre><code class="language-bash">curl -sL https://raw.githubusercontent.com/timm/awk/master/dot/dot -o dot &amp;&amp; chmod +x dot</code></pre>
+
+<p>Or onto your PATH:</p>
+<pre><code class="language-bash">curl -sL https://raw.githubusercontent.com/timm/awk/master/dot/dot -o ~/.local/bin/dot &amp;&amp; chmod +x ~/.local/bin/dot</code></pre>
+
+<h2>Verify</h2>
+<p>One command. Bundled <code>--hello</code> demo runs running-mean over five numbers:</p>
+<pre><code class="language-bash">./dot --demo hello</code></pre>
+<p>Expect:</p>
+<pre><code class="language-bash">n=5 mean=30.000</code></pre>
+<p>If you see that, the preprocessor, runtime, and helper library are all working.</p>
+
+<h2>Usage</h2>
+<pre><code class="language-bash">dot FILE.awk [DATA...]    # run rewritten FILE.awk on DATA (or stdin)
+dot a.awk b.awk DATA      # multi-file run; .awk args go through prep
+cat DATA | dot FILE.awk   # stdin works too
+dot -c FILE.awk           # print rewritten source only
+dot --demo NAME [DATA]    # run demos/NAME/*.awk on DATA (or sample.*)
+dot --demos               # list available demos under ./demos/
+dot --show                # dump bundled lib/*.awk (post-prep)
+dot --help                # full help</code></pre>
+
+<p><code>dot</code> ships only the preprocessor, the runtime (<code>new</code>, <code>arr</code>, <code>zap</code>) and helpers (<code>rogues</code>, <code>o</code>, <code>_oo</code>) &mdash; plus the <code>hello</code> demo. For Num/Sym column types, the Data CSV table, and a curated example-data fetcher, install <a href="../dotcols/install.html">dotcols</a>. For ML on top, install <a href="../dotlearn/index.html">dotlearn</a>.</p>
+
+<h2>Prefer git?</h2>
 <pre><code class="language-bash">git clone https://github.com/timm/awk
 cd awk/dot
-make stats DATA=path/to/data.csv</code></pre>
-
-<p>The <code>dot</code> wrapper resolves its own location, so once it's on <code>PATH</code> it works from any directory:</p>
-<pre><code class="language-bash">export PATH=$PWD:$PATH
-dot dot.awk     # print rewritten file</code></pre>
-
-<h2>Dev shell</h2>
-<p>From repo root:</p>
-<pre><code class="language-bash">make sh</code></pre>
-<p>Launches an interactive bash with <code>etc/bash.rc</code> sourced &mdash; aliases, prompt with branch indicator, and <code>~/.local/bin</code> on <code>PATH</code>.</p>
+./build.sh           # rebuild the dot binary from sources</code></pre>
+<p>The repo contains the modular sources (<code>lib/prep.awk</code>, <code>lib/dot.awk</code>, <code>lib/dotlib.awk</code>) plus the <code>demos/hello/</code> example and <code>build.sh</code>, which assembles them into the single-file <code>dot</code> binary. Edit a source file, run <code>./build.sh</code>, get a rebuilt <code>dot</code>.</p>
 
 </div>
 </div>

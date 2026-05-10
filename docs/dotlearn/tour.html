@@ -18,9 +18,11 @@
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
-      <a href="tour.html">Tour</a>
-      <a href="example.html">Examples</a>
+      <a href="install.html">Install</a>
       <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
       <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
     </nav>
   </div>
@@ -51,27 +53,59 @@ tree.awk        tree-cli.awk    treeshow.awk    wins.awk</span>
 
 <div class="step"><div class="num">2</div><h2>Get sample data</h2></div>
 <pre class="term">
-<span class="prompt">$</span> git clone https://github.com/timm/moot ~/gits/moot
-<span class="prompt">$</span> head -2 ~/gits/moot/optimize/misc/auto93.csv
+<span class="prompt">$</span> ./dotlearn --get-data
+<span class="prompt">$</span> head -2 data/regression/auto93.csv
 <span class="out">Clndrs,Volume,HpX,Model,origin,Lbs-,Acc+,Mpg+
 8,304,193,70,1,4732,18.5,10</span>
 </pre>
-<p>Header sigils: UPPERCASE = numeric, suffix <code>!</code> = class, <code>+</code>/<code>-</code> = max/min goal.</p>
+<p>Header sigils: UPPERCASE = numeric, suffix <code>!</code> = class, <code>+</code>/<code>-</code> = max/min goal. Each demo also has its own <code>demos/NAME/sample.csv</code>, used by default when no DATA arg is given.</p>
 
-<div class="step"><div class="num">3</div><h2>App 1: tree</h2></div>
-<p>Decision/regression tree. Train on first <code>wait</code> rows, test on the rest:</p>
+<div class="step"><div class="num">3a</div><h2>App 1: tree &mdash; build it and look at it</h2></div>
+<p>Five-line program: read CSV, train a tree on every row, pretty-print it. Loads the demo's <code>config.csv</code> (sets <code>leaf</code>, <code>maxd</code>, <code>p</code>) first, then the data.</p>
 <pre class="term">
-<span class="prompt">$</span> make tree DATA=~/gits/moot/classify/heart.c.csv
+<span class="prompt">$</span> cat &gt; tour-tree.awk &lt;&lt;'EOF'
+BEGIN { FS = " *, *" }
+FNR == NR { THE[$1] = $2 + 0; next }
+FNR == 1  { D = new("data"); data_head(D, $0); next }
+          { data_read(D, 1) }
+END       { T = tree_train(D, .D.all, 0, ""); treeshow(D, T) }
+EOF
+<span class="prompt">$</span> ./dotlearn tour-tree.awk demos/tree/config.csv demos/acquire/sample.csv | head -10
+<span class="out">rule                                        d2h     n     Lbs-     Acc+     Mpg+
+ROOT                                      0.529   398  2970.42    15.57    23.84
+|   Clndrs &gt;  4                           0.720   190  3693.56    14.51    17.84
+|   |   HpX &gt;  130                        0.852    91  4151.89    12.56    14.62
+|   |   |   HpX &gt;  150                    0.893    45  4322.40    11.89    12.67
+|   |   |   |   Volume &gt;  360             0.912    22  4441.41    10.85    13.18
+|   |   |   |   Volume &lt;= 360             0.874    23  4208.57    12.87    12.17
+|   |   |   HpX &lt;= 150                    0.812    46  4495.65    13.21    16.67
+|   |   HpX &lt;= 130                        0.594    99  3272.51    16.31    20.85
+|   Clndrs &lt;= 4                           0.343   208  3308.30    16.54    29.34</span>
+</pre>
+<p>Each row: rule path, <code>d2h</code> (mean distance-to-heaven), <code>n</code> (rows in node), then per-y-goal column means. Reading top-down: <code>Clndrs &lt;= 4</code> is the better branch (lower d2h, higher Mpg+, lower Lbs-). The bundled <code>treeshow</code> walks the tree and prints; the work is all in <code>tree_train</code>.</p>
+
+<p style="background: var(--bg-alt); border-left: 3px solid var(--accent); padding: 8px 14px; font-size: 14px; color: var(--fg-soft);">
+  <strong>Heads up &mdash; column names look ambiguous in deep leaves.</strong>
+  In auto93, <code>Volume</code> is engine displacement in cubic inches (real range 70&ndash;455);
+  <code>Model</code> is model year (70&ndash;82, i.e.&nbsp;1970&ndash;1982). They overlap numerically in the 70&ndash;100 range,
+  so a deep split like <code>Volume &lt;= 91</code> can read like a year filter at first glance.
+  It isn't &mdash; it's picking small-engine cars (which is why the leaf below has Mpg+ &asymp; 35).
+</p>
+
+<div class="step"><div class="num">3b</div><h2>tree &mdash; get prediction stats from it</h2></div>
+<p>Now the same model, used differently: train on first <code>wait</code> rows, predict the rest, summarise per-class:</p>
+<pre class="term">
+<span class="prompt">$</span> ./dotlearn --demo tree | gawk -f tools/metrics.awk
 <span class="out">    n     pd     pf   prec    acc  class
    48  0.625  0.145  0.789  0.748  &gt;50_1
    55  0.855  0.375  0.723  0.748  &lt;50</span>
 </pre>
-<p>Same pipeline does regression on <code>+</code>/<code>-</code> goals: <code>make tree DATA=auto93.csv</code> emits raw <code>pred,actual</code> distances.</p>
+<p><code>--demo tree</code> emits raw <code>pred,actual</code> lines; <code>tools/metrics.awk</code> reduces them to per-class precision/recall/accuracy. So 3a inspects the model, 3b scores it.</p>
 
 <div class="step"><div class="num">4</div><h2>App 2: nb (naive Bayes)</h2></div>
 <p>Streaming Naive Bayes. m-estimate / k-estimate smoothing:</p>
 <pre class="term">
-<span class="prompt">$</span> make nb DATA=~/gits/moot/classify/heart.c.csv
+<span class="prompt">$</span> ./dotlearn --demo nb | gawk -f tools/metrics.awk
 <span class="out">    n     pd     pf   prec    acc  class
    48  0.729  0.091  0.875  0.825  &gt;50_1
    55  0.909  0.271  0.794  0.825  &lt;50</span>
@@ -81,7 +115,7 @@ tree.awk        tree-cli.awk    treeshow.awk    wins.awk</span>
 <div class="step"><div class="num">5</div><h2>App 3: acquire (active learning)</h2></div>
 <p>This is the interesting one. Shuffle. Split 50/50 train/test. Warm-start with 4 random labels. Acquire 50 more by centroid score (closer to best, farther from rest). Train a tree on the 54 labelled rows. Test, take top 5 by tree prediction, score the best by actual disty.</p>
 <pre class="term">
-<span class="prompt">$</span> make acquire DATA=~/gits/moot/optimize/misc/auto93.csv
+<span class="prompt">$</span> ./dotlearn --demo acquire
 <span class="out">wins  lo=0.075  med=0.535  sd=0.266
 
 === TREE on 54 labelled rows ===
@@ -122,16 +156,14 @@ top 5 guess actual-disty=0.158  win=100/100</span>
 <p>What that means: with <strong>54 labels</strong> (~14% of 398 rows) plus <strong>5 oracle calls</strong> at the end, we landed in the top-tier "win=100" band. Across 30 seeds the picks span 0.075&ndash;0.160 disty, all inside the 0.35*sd cushion of the global best (0.075).</p>
 
 <div class="step"><div class="num">6</div><h2>Cross-validation</h2></div>
-<p>20-shuffle averaged metrics:</p>
+<p>To average over N seeded shuffles, loop in shell using <code>tools/shuf.awk</code>:</p>
 <pre class="term">
-<span class="prompt">$</span> make tree20 DATA=~/gits/moot/classify/heart.c.csv
+<span class="prompt">$</span> for i in $(seq 1 20); do
+    ./dotlearn --demo tree &lt;(gawk -v seed=$i -f tools/shuf.awk demos/tree/sample.csv)
+  done | gawk -f tools/metrics.awk
 <span class="out">    n     pd     pf   prec    acc  class
   945  0.743  0.237  0.727  0.754  &gt;50_1
  1115  0.763  0.257  0.778  0.754  &lt;50</span>
-<span class="prompt">$</span> make nb20 DATA=~/gits/moot/classify/heart.c.csv
-<span class="out">    n     pd     pf   prec    acc  class
-  945  0.808  0.125  0.846  0.845  &gt;50_1
- 1115  0.875  0.192  0.844  0.845  &lt;50</span>
 </pre>
 
 <div class="step"><div class="num">7</div><h2>Where to go next</h2></div>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotlearn &mdash; Install</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotlearn">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotlearn</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Install dotlearn</h1>
+<p class="lead">One self-contained bash binary. Bundles dot's runtime + dotcols's column types + ML libs (tree, naive Bayes, active learning) + three bundled demos.</p>
+
+<h2>Requirements</h2>
+<table>
+  <tr><th>Tool</th><th>Version</th><th>Why</th></tr>
+  <tr><td><code>gawk</code></td><td>&ge; 4.x</td><td>indirect calls, <code>FUNCTAB</code>, <code>asorti</code></td></tr>
+  <tr><td><code>bash</code></td><td>&ge; 4.x</td><td>arrays, process substitution <code>&lt;(...)</code></td></tr>
+  <tr><td><code>curl</code></td><td>any</td><td><code>--get-data</code> fetcher</td></tr>
+</table>
+
+<h2>Get gawk</h2>
+<pre><code class="language-bash">brew install gawk        # macOS
+sudo apt install gawk    # debian/ubuntu</code></pre>
+
+<h2>Install</h2>
+<pre><code class="language-bash">curl -sL https://raw.githubusercontent.com/timm/awk/master/dotlearn/dotlearn -o dotlearn
+chmod +x dotlearn</code></pre>
+<p>Or onto your PATH:</p>
+<pre><code class="language-bash">curl -sL https://raw.githubusercontent.com/timm/awk/master/dotlearn/dotlearn -o ~/.local/bin/dotlearn
+chmod +x ~/.local/bin/dotlearn</code></pre>
+
+<h2>Verify</h2>
+<p>Run the bundled <code>tree</code> demo on its sample CSV (heart-disease):</p>
+<pre><code class="language-bash">./dotlearn --demo tree | head -3</code></pre>
+<p>Expect three lines like:</p>
+<pre><code class="language-bash">&lt;50,&lt;50
+&gt;50_1,&gt;50_1
+&lt;50,&gt;50_1</code></pre>
+<p>Each line is one held-out test row: <code>predicted,actual</code>. Pipe the full output through <code>tools/metrics.awk</code> for a summary table.</p>
+
+<h2>Get example data</h2>
+<pre><code class="language-bash">./dotlearn --get-data</code></pre>
+<p>Pulls 30 curated CSVs (10 classification, 10 regression, 10 optimization) from the <a href="https://github.com/timm/moot">moot</a> data repo into <code>./data/</code>. Same set as <code>dotcols --get-data</code>.</p>
+
+<h2>Usage</h2>
+<pre><code class="language-bash">dotlearn FILE.awk [DATA...]    # run rewritten FILE.awk on DATA (or stdin)
+dotlearn a.awk b.awk DATA      # multi-file run; .awk args go through prep
+cat DATA | dotlearn FILE.awk   # stdin works too
+dotlearn -c FILE.awk           # print rewritten source only
+dotlearn --demo NAME [DATA]    # run demos/NAME/*.awk on DATA
+                               # (auto-prepends config.csv if present;
+                               #  defaults DATA to demos/NAME/sample.*; pass `-` for stdin)
+dotlearn --demos               # list available demos under ./demos/
+dotlearn --show                # dump bundled lib/*.awk (post-prep)
+dotlearn --get-data            # fetch 30 curated CSVs into ./data/
+dotlearn --help                # full help</code></pre>
+
+<h3>Bundled demos</h3>
+<pre><code class="language-bash">dotlearn --demo tree                              # decision tree on heart.c.csv
+dotlearn --demo nb                                # naive Bayes on heart.c.csv
+dotlearn --demo acquire                           # active learning on auto93.csv
+dotlearn --demo tree | gawk -f tools/metrics.awk  # tree + per-class summary</code></pre>
+
+<h2>Prefer git?</h2>
+<pre><code class="language-bash">git clone https://github.com/timm/awk
+cd awk/dotlearn
+./build.sh           # rebuild the dotlearn binary from sources</code></pre>
+<p>The repo holds the modular sources (<code>lib/{dist,tree,bayes,treeshow,wins}.awk</code>) plus the three demo dirs and <code>tools/{metrics,shuf}.awk</code>. <code>build.sh</code> bundles them with <code>../dot/lib/*</code> and <code>../dotcols/lib/*</code> into the single-file <code>dotlearn</code> binary.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

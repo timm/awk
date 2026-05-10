@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotlearn &mdash; Tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotlearn">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotlearn</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dotlearn">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Annotated tests</h1>
+<p class="lead">19 smoke tests for <code>dotlearn</code>. Verifies dot + dotcols runtimes are bundled, exercises distance functions, then runs all three ML demos end-to-end.</p>
+
+<pre><code class="language-bash">cd dotlearn
+./tests/test.sh
+# All 19 tests passed.</code></pre>
+
+<h2>1. Build &amp; help</h2>
+<pre><code class="language-bash">contains "build.sh runs"     "built dotlearn" "$out"
+contains "no args -> usage"   "Usage:"        "$($DL 2&gt;&amp;1)"
+contains "--help has --demo"  "--demo"        "$($DL --help)"
+contains "--demos lists tree"   "tree"        "$($DL --demos)"
+contains "--demos lists nb"     "nb"          "$($DL --demos)"
+contains "--demos lists acquire" "acquire"    "$($DL --demos)"</code></pre>
+<p><strong>Asserts:</strong> binary builds; CLI dispatcher works; auto-discovery finds all three demo dirs (<code>tree</code>, <code>nb</code>, <code>acquire</code>) on disk.</p>
+
+<h2>2. Inherits dot + dotcols</h2>
+<p>dotlearn bundles both lower layers. These tests prove their public functions are reachable.</p>
+<pre><code class="language-bash">eq "new + .field"   "7"   "$(run_inline 'BEGIN{N=new("plain"); .N.n=7; printf "%d\n", .N.n}')"
+eq "Num via add()"  "30"  "$(run_inline 'BEGIN{N=new("num"); for(i=1;i&lt;=5;i++) add(N,i*10,1); printf "%d\n", mid(N)}')"
+eq "Data ingests"   "303" "$(run_inline '
+  BEGIN { d = new("data"); FS = " *, *" }
+  NR==1 { data_head(d, $0); next }
+        { data_read(d, 1) }
+  END   { printf "%d\n", .d.nrows }
+  ' demos/tree/sample.csv)"</code></pre>
+<p><strong>Asserts:</strong> from dot &mdash; <code>new()</code> + <code>.field</code> sugar work. From dotcols &mdash; <code>add</code> dispatches to <code>num_add</code>, and <code>Data</code> ingests CSV. All three layers wired correctly.</p>
+
+<h2>3. Distance (dist.awk)</h2>
+<pre><code class="language-bash">out=$(run_inline '
+  BEGIN { d = new("data"); FS = " *, *" }
+  NR==1 { data_head(d, $0); next }
+        { data_read(d, 1) }
+  END   { print disty(d, .d.rows[1]) }
+  ' demos/tree/sample.csv)
+nonempty "disty(row 1)" "$out"</code></pre>
+<p><strong>Asserts:</strong> after ingesting heart.c.csv, the first row has a finite distance-to-heaven across its y-columns. Doesn't lock to a specific number (depends on data); just verifies the function runs and returns something. Catches missing <code>num_norm</code>, broken sigil parsing, etc.</p>
+
+<h2>4. Demo: tree</h2>
+<pre><code class="language-bash">out=$($DL --demo tree)
+nonempty   "tree produces output"        "$out"
+contains   "tree output is pred,actual"  "&lt;50" "$out"
+n=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
+[ "$n" -gt 50 ] &amp;&amp; ok "tree output >50 rows" || bad ...</code></pre>
+<p><strong>Asserts:</strong> the tree demo emits raw <code>pred,actual</code> lines containing the expected class label (<code>&lt;50</code>); produces &gt;50 rows (one per held-out test row). End-to-end: config &rarr; load &rarr; train tree &rarr; predict &rarr; print.</p>
+
+<h2>5. Demo: nb</h2>
+<pre><code class="language-bash">out=$($DL --demo nb)
+nonempty "nb produces output"      "$out"
+contains "nb output is pred,actual" "," "$out"</code></pre>
+<p><strong>Asserts:</strong> Naive Bayes demo emits comma-separated <code>pred,actual</code> lines. Same pipeline shape as tree, different model. If <code>nb_train</code>, <code>nb_test</code>, or the m-estimate smoothing breaks, the output disappears or crashes.</p>
+
+<h2>6. Demo: acquire</h2>
+<pre><code class="language-bash">out=$($DL --demo acquire 2&gt;&amp;1)
+contains "acquire prints RESULT block" "RESULT"   "$out"
+contains "acquire reports labelled"    "labelled" "$out"</code></pre>
+<p><strong>Asserts:</strong> the active learner runs the full pipeline (warm-start &rarr; acquire loop &rarr; tree on labelled rows &rarr; predict test set &rarr; score top-5 against percentiles) and reaches the <code>=== RESULT ===</code> block with a <code>labelled : N</code> line. Verifies all of: shuffle, data_clone, distx/disty, tree_train, tree_leaf, wins scorer.</p>
+
+<h2>7. Errors</h2>
+<pre><code class="language-bash">out=$($DL --demo nonesuch 2&gt;&amp;1 || true)
+contains "missing demo errors" "no such demo" "$out"</code></pre>
+
+<h2>What this proves</h2>
+<ul style="margin-left: 24px;">
+<li>All three layers bundle into <code>dotlearn</code>: every public function from dot, dotcols, and dotlearn is reachable.</li>
+<li>Distance functions work on real CSV data.</li>
+<li>All three ML pipelines (<code>tree</code>, <code>nb</code>, <code>acquire</code>) execute end-to-end without crashes.</li>
+<li>The active-learning loop converges to a labelled set and produces a final RESULT block.</li>
+<li>Demos auto-discover their config.csv and sample.csv via the standard <code>--demo</code> resolution.</li>
+</ul>
+
+<p>Tests don't pin specific accuracies (those depend on shuffle seeds and dataset details). They verify the full pipeline runs and produces output of the expected shape. For accuracy regressions, eyeball <code>./dotlearn --demo tree | gawk -f tools/metrics.awk</code> and compare against the published numbers in <a href="example.html">example.html</a>.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

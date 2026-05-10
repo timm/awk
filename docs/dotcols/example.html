@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotcols &mdash; Stats example</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotcols">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotcols</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dotcols">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Example: stats.awk</h1>
+<p class="lead">Per-column running stats on any CSV. Mean/stdev for numeric, mode/entropy for symbolic. Same <code>add()</code> call, polymorphic dispatch.</p>
+
+<div class="glossary">
+  <h4>Quick glossary</h4>
+  <dl>
+    <dt>gawk</dt><dd>GNU awk. Adds indirect calls, multi-dim arrays, <code>FUNCTAB</code>, <code>SYMTAB</code>.</dd>
+    <dt>FUNCTAB</dt><dd>gawk built-in: array of all defined function names. Tested with <code>(name in FUNCTAB)</code>.</dd>
+    <dt>SYMTAB</dt><dd>gawk built-in: array of all global variable names. Used by <code>rogues()</code> to detect leaks.</dd>
+    <dt>@fn(...)</dt><dd>indirect function call. <code>fn = "num_add"; @fn(it,x)</code> calls <code>num_add(it,x)</code>.</dd>
+    <dt>&lt;(cmd)</dt><dd>process substitution (bash). <code>cmd</code>'s output appears as a temporary file path.</dd>
+    <dt>arg slot</dt><dd>awk has no <code>local</code> keyword. Locals declared as extra args after the real ones, separated by extra spaces.</dd>
+  </dl>
+</div>
+
+<p>Built bottom-up, smallest first. The toolchain (3-line shell + 6-line preprocessor) and the runtime (3 functions, 9 LOC) are the entire foundation. After that, two layers of program code: a generic helper library, then a tiny type library, then the main program. gawk concatenates everything via separate <code>-f</code> flags (see <a href="#run">Run</a>); no <code>@include</code> needed.</p>
+
+<h2 id="toolchain">0. The toolchain &mdash; <code>dot</code> + <code>prep.awk</code> (~9 LOC total)</h2>
+<p>The shell wrapper is three lines. It locates itself, then runs <code>prep.awk</code> on the source file you hand it; the rewritten code goes to stdout, ready for <code>gawk -f &lt;(dot foo.awk)</code>.</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &amp;&amp; pwd)"
+gawk -f "$DOT_DIR/prep.awk" "$1"</code></pre>
+
+<p>The preprocessor itself is one rule with two regex sweeps per line. First sweep: any <code>.field</code> directly after a value-character (letter, digit, <code>_</code>, <code>]</code>, <code>)</code>) becomes <code>["field"]</code> &mdash; a struct-field access. Second sweep: any leftover <code>.name</code> (bare, with no value-char before it) becomes <code>HEAP[name]</code> &mdash; an object reference.</p>
+<pre><code class="language-c"># prep.awk -- two-pass regex rewrite. ~6 LOC.
+# .f after value-char  ->  ["f"]      (field access)
+# .x bare              ->  HEAP[x]    (object reference)
+{ s = $0
+  while (match(s, /([A-Za-z0-9_\]\)])\.([A-Za-z_][A-Za-z_0-9]*)/, m))
+    s = substr(s,1,RSTART-1) m[1] "[\"" m[2] "\"]" substr(s,RSTART+RLENGTH)
+  while (match(s, /\.([A-Za-z_][A-Za-z_0-9]*)/, m))
+    s = substr(s,1,RSTART-1) "HEAP[" m[1] "]" substr(s,RSTART+RLENGTH)
+  print s }</code></pre>
+<p>That is the whole compile pipeline. <code>match()</code>+<code>substr()</code> loop instead of <code>gensub(...,"g")</code> dodges a gawk 5.4.0 bug where the second match's captures come back empty.</p>
+
+<p>What that does, in concrete terms &mdash; each input line gets rewritten line-for-line, no insertions, no deletions:</p>
+<pre><code class="language-c"># source line                  ->  after prep.awk
+.it.n++                        ->  HEAP[it]["n"]++
+.it.mu += d / .it.n            ->  HEAP[it]["mu"] += d / HEAP[it]["n"]
+add(.col[i], $i, 1)            ->  add(HEAP[col][i], $i, 1)
+.d.rows[r][i]                  ->  HEAP[d]["rows"][r][i]
+NAME[i] = $i                   ->  NAME[i] = $i        (no dots, unchanged)</code></pre>
+<p>Two cases per line. <code>.x</code> after a value-char (<code>t</code>, <code>]</code>, <code>)</code>, etc.) is a field access &rarr; <code>["x"]</code>. <code>.x</code> bare is an object reference &rarr; <code>HEAP[x]</code>. Plain awk code with no dots passes through untouched, so most existing awk programs survive the preprocessor unchanged.</p>
+
+<p>If you need a literal dot &mdash; for instance, joining a basename and an extension &mdash; split it across strings so the dot has a quote on each side. Quotes are not value-chars, so the regex skips it:</p>
+<pre><code class="language-c">###############################################################
+#   DO  THIS                                                  #
+###############################################################
+# source line                  ->  after prep.awk
+"fred" "." "csv"               ->  "fred" "." "csv"        (safe: dot stands alone)
+name "." ext                   ->  name "." ext            (safe)
+
+###############################################################
+#   DON'T  DO  THIS                                           #
+###############################################################
+"fred.csv"                     ->  "fred[\"csv\"]"         (BROKEN: dot is inside a string,
+                                                             d is a value-char, .csv matches)</code></pre>
+<p>Rule of thumb: a dot literal is safe only when nothing on its left is a letter, digit, <code>_</code>, <code>]</code>, or <code>)</code>. The cleanest fix is the explicit-dot pattern above &mdash; <code>"." </code> as its own string, concatenated.</p>
+
+<h2 id="dot-awk">1. The runtime &mdash; <code>dot.awk</code> (3 functions, 9 LOC)</h2>
+<p>Everything sits on one global, <code>HEAP</code>. Each object is an integer id; <code>HEAP[id]</code> is its struct. Three functions &mdash; a constructor, an array-init helper, a slot zapper. That is the entire runtime.</p>
+<pre><code class="language-c"># dot.awk -- the entire object runtime. Three functions.
+
+# new(t): allocate a fresh object id, tag it, run optional t_init().
+function new(t,    it, fn) {
+  it = ++NID;  .it.is = t                  # .it.is  ->  HEAP[it]["is"]
+  fn = t "_init"
+  return (fn in FUNCTAB) ? @fn(it) : it }  # call type_init if it exists
+
+# arr(x): force x to be an array. Safe to "for k in x" when later empty.
+function arr(x) { x[""] = 0; delete x[""] }
+
+# zap(i): clear one HEAP slot. Use when caller is done with object i.
+function zap(i) { delete HEAP[i] }</code></pre>
+<p><strong>Fewest lines to make <code>dot</code> work:</strong> 3-line shell + 6-line <code>prep.awk</code> + 4-line <code>new()</code> = <strong>13 LOC</strong>. Add <code>arr</code> and <code>zap</code> for the typical demos and the runtime is still under 10 lines.</p>
+
+<h2 id="dotlib-awk">2. Generic helpers &mdash; <code>dotlib.awk</code></h2>
+<p>Three things, two functions. A leak check, and one polymorphic printer <code>o()</code> that dispatches to a workhorse <code>_oo</code> for arrays. Scalars and arrays go through the same call.</p>
+<pre><code class="language-c"># dotlib.awk -- generic helpers (no HEAP knowledge).
+
+# rogues(): warn on lowercase globals at end of run. Discipline check.
+function rogues(    i) {
+  for (i in SYMTAB) if (i ~ /^[a-z]/) print "leak:", i &gt; "/dev/stderr" }
+
+# o(x): print one thing.
+#   array, 1 in x   -> "[..]" list,  numeric-sorted, no key prefix
+#   array, no 1     -> "{..}" dict,  string-sorted,  "k: " prefix
+#   number-shaped   -> %d if whole, else %G
+#   else            -> %s
+# Custom brackets: call _oo directly, e.g. _oo(a,"(",")","@ind_num_asc",0).
+function o(x) {
+  if (isarray(x)) {
+    if (1 in x) _oo(x, "[", "]", "@ind_num_asc", 0)
+    else        _oo(x, "{", "}", "@ind_str_asc", 1)
+  } else if (x ~ /^-?[0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)?$/) {
+    if (x == int(x)) printf "%d", x
+    else             printf "%G", x }
+  else printf "%s", x }
+
+# _oo: collect+sort keys, walk them, print one entry each. Recurses via o().
+function _oo(a, lhs, rhs, how, withkey,    n, i, k, sep, sorted) {
+  printf "%s", lhs
+  n = asorti(a, sorted, how)
+  sep = ""
+  for (i = 1; i &lt;= n; i++) {
+    k = sorted[i]
+    printf "%s", sep
+    if (withkey) printf "%s: ", k
+    o(a[k])
+    sep = ", " }
+  printf "%s", rhs }</code></pre>
+<p>One entry point. <code>o()</code> dispatches on shape: array vs scalar, list-shaped vs dict-shaped, integer-valued float vs other number, else string. Recursion is automatic &mdash; <code>_oo</code> calls <code>o()</code> on each element, so nested mixes (list-of-dicts, dict-of-lists, anything) just work.</p>
+<pre><code class="language-c">o(5.0)                              # -> 5
+o(1e-7)                             # -> 1E-07
+o("hi")                             # -> hi
+o(a)        # a[1..n]               # -> [10, 20, 3.14]
+o(b)        # b["alpha"]=1, ...     # -> {alpha: 1, beta: 2.5}
+o(c)        # nested mix            # -> {name: tim, xs: [1, 2]}
+_oo(a, "(", ")", "@ind_num_asc", 0) # -> (10, 20, 3.14)   tuple style</code></pre>
+<p>The <code>"@ind_num_asc"</code> string names a built-in <code>asorti()</code> comparator (numeric ascending on the keys). The <code>@</code> prefix is required &mdash; without it gawk treats the string as a user-defined comparison function name and aborts.</p>
+
+<h2 id="numsym-mini">3. The type library &mdash; <code>numsym-mini.awk</code> (~20 LOC)</h2>
+<p>Two types, Num and Sym, sharing three polymorphic ops: <code>add</code>, <code>mid</code>, <code>var</code>. Dispatch is one line each &mdash; build the function name from <code>.it.is</code>, then indirect-call it via <code>@fn</code>. Num uses Welford's online mean+variance; Sym keeps a counts table.</p>
+<pre><code class="language-c"># numsym-mini.awk -- Num: mean+stdev (Welford). Sym: mode+entropy.
+
+# --- polymorphic dispatch: pick fn by type tag, indirect-call it ----
+function add(k, x,    fn) { fn = .k.is  "_add"; return @fn(k, x) }
+function mid(it,      fn) { fn = .it.is "_mid"; return @fn(it) }
+function var(it,      fn) { fn = .it.is "_var"; return @fn(it) }
+
+# --- NUM: running mean + stdev via Welford --------------------------
+function num_add(it, x,    d) {
+  .it.n++
+   d      = x - .it.mu                           # delta from old mean
+  .it.mu += d / .it.n                            # update mean
+  .it.m2 += d * (x - .it.mu) }                   # delta * (x - new mean)
+function num_mid(it) { return .it.mu }
+function num_var(it) { return .it.n &lt; 2 ? 0 : sqrt(.it.m2 / (.it.n - 1)) }
+
+# --- SYM: counts table -> mode + entropy ----------------------------
+function sym_init(it)   { arr(.it.has); return it }   # called by new("sym")
+function sym_add(it, x) { .it.n++; .it.has[x]++ }
+function sym_mid(it,   k, b, bv) {                    # most-common key
+  bv = -1
+  for (k in .it.has) if (.it.has[k] &gt; bv) { bv = .it.has[k]; b = k }
+  return b }
+function sym_var(it,   k, p, e) {                     # Shannon entropy
+  for (k in .it.has) { p = .it.has[k] / .it.n; e -= p * log(p) }
+  return e }</code></pre>
+<p>Three sugar tricks on display: <code>.it.x</code> &rarr; <code>HEAP[it]["x"]</code> (struct sugar), <code>@fn(it)</code> indirect call (poor-man's vtable), and <code>new()</code>/<code>arr()</code> from layer 1 for safe construction. The full <code>numsym.awk</code> adds Bayes likelihoods, weighting, and normalisation; the slice above is enough for this example.</p>
+
+<h2 id="stats-awk">4. The main program &mdash; <code>stats.awk</code></h2>
+<p>Reads any CSV. UPPERCASE column names &rarr; Num, lowercase &rarr; Sym. One pass, prints summary at end. All it does is call into the two layers above.</p>
+<pre><code class="language-c">BEGIN { FS = " *, *" }                       # CSV: comma + optional spaces
+
+NR == 1 { header(); next }                   # first row = column names
+      { ingest() }                            # every other row = data
+
+# header(): one Num or Sym per column, decided by first letter's case.
+function header(    i) {
+  for (i = 1; i &lt;= NF; i++) {
+    NAME[i] = $i
+    COL[i]  = new($i ~ /^[A-Z]/ ? "num" : "sym") } }   # new() from dot.awk
+
+# ingest(): polymorphic add() picks num_add or sym_add per column.
+function ingest(    i) {
+  for (i = 1; i &lt;= NF; i++) add(COL[i], $i, 1) }
+
+END { report(); rogues() }                   # rogues() from dotlib.awk
+
+function report(    i, c) {
+  printf "%-22s %6s %12s %12s\n", "column", "n", "mid", "spread"
+  for (i = 1; i &lt;= length(NAME); i++) {
+    c = COL[i]
+    if (.c.is == "num") printf "%-22s %6d %12.3f %12.3f\n", NAME[i], .c.n, mid(c), var(c)
+    else                printf "%-22s %6d %12s %12.3f\n", NAME[i], .c.n, mid(c), var(c) } }</code></pre>
+
+<h2>Input</h2>
+<p>Heart-disease CSV. Mix of numeric (UPPER) and symbolic (lower) columns:</p>
+<pre><code class="language-bash">AGE,sex,cp,TRESTBPS,CHOL,fbs,restecg,THALACH,exang,OLDPEAK,slope,CA,thal,num!
+63,male,typ_angina,145,233,t,left_vent_hyper,150,no,2.3,down,0,fixed_defect,&lt;50
+67,male,asympt,160,286,f,left_vent_hyper,108,yes,1.5,flat,3,normal,&gt;50_1</code></pre>
+
+<h2 id="run">Run</h2>
+<p>The <code>dotcols</code> binary bundles dot's runtime + helpers + Num/Sym/Data, so you only pass the program file:</p>
+<pre><code class="language-bash">dotcols stats.awk data/classify/heart.c.csv</code></pre>
+<p>Or use the bundled demo (no source file needed &mdash; reads <code>demos/stats/sample.csv</code> by default, or whatever DATA you pass):</p>
+<pre><code class="language-bash">dotcols --demo stats data/classify/heart.c.csv</code></pre>
+<p>Or pipe data via stdin (use <code>-</code> to override the default sample):</p>
+<pre><code class="language-bash">cat data/classify/heart.c.csv | dotcols --demo stats -</code></pre>
+<p>To inspect what the preprocessor produced for any file:</p>
+<pre><code class="language-bash">dotcols -c stats.awk    # print rewritten source to stdout</code></pre>
+
+<h2>Output</h2>
+<pre><code class="language-bash">column                      n          mid       spread
+AGE                       303       54.366        9.082
+sex                       303         male        0.624
+cp                        303       asympt        1.206
+TRESTBPS                  303      131.624       17.538
+CHOL                      303      246.264       51.831
+fbs                       303            f        0.420
+restecg                   303       normal        0.754
+THALACH                   303      149.647       22.905
+exang                     303           no        0.632
+OLDPEAK                   303        1.040        1.161
+slope                     303           up        0.897
+CA                        298        0.674        0.938
+thal                      301       normal        0.864
+num!                      303          &lt;50        0.689</code></pre>
+
+<p><code>mid</code> = mean (num) or mode (sym). <code>spread</code> = stdev (num) or entropy (sym).</p>
+
+<h2>What just happened</h2>
+<ol style="margin-left: 24px;">
+  <li><code>header()</code> reads first row, calls <code>new("num")</code> or <code>new("sym")</code> per column based on first-letter case. Each call returns a fresh ID and seeds <code>HEAP[id]</code>.</li>
+  <li>Every subsequent row: <code>ingest()</code> calls <code>add(COL[i], $i, 1)</code>. Same call dispatches to <code>num_add</code> or <code>sym_add</code> via <code>.it.is</code>.</li>
+  <li><code>num_add</code> updates Welford's running mean+variance. <code>sym_add</code> increments a counts table.</li>
+  <li><code>report()</code> calls <code>mid()</code> and <code>var()</code> &mdash; both polymorphic. <code>num_mid</code> returns mean; <code>sym_mid</code> returns mode. <code>num_var</code> returns stdev; <code>sym_var</code> returns entropy.</li>
+  <li><code>rogues()</code> at end reports any lowercase global leaked. Should print nothing.</li>
+</ol>
+
+<h2>Variants</h2>
+<pre><code class="language-bash">dotcols --demos              # list bundled demos
+dotcols --show               # dump bundled runtime libs (post-prep)
+dotcols --get-data           # fetch 30 curated CSVs into ./data/</code></pre>
+
+<h2>Next</h2>
+<p>To use these types for actual machine learning &mdash; decision trees, naive Bayes &mdash; see <a href="../dotlearn/example.html">dotlearn</a>.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

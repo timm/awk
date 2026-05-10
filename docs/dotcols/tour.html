@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dotcols &mdash; Tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dotcols">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dotcols</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dotcols">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Tutorial</h1>
+<p class="lead">Zero to per-column running stats on a real CSV. Real prompts, real output.</p>
+
+<div class="step"><div class="num">1</div><h2>Install gawk</h2></div>
+<pre class="term">
+<span class="prompt">$</span> brew install gawk        <span class="comment"># macOS</span>
+<span class="prompt">$</span> sudo apt install gawk    <span class="comment"># debian/ubuntu</span></pre>
+
+<div class="step"><div class="num">2</div><h2>Install the dotcols binary</h2></div>
+<pre class="term">
+<span class="prompt">$</span> curl -sL https://raw.githubusercontent.com/timm/awk/master/dotcols/dotcols -o dotcols
+<span class="prompt">$</span> chmod +x dotcols
+<span class="prompt">$</span> ./dotcols --demo stats | head -3
+<span class="out">column                      n          mid       spread
+AGE                       303       54.366        9.082
+sex                       303         male        0.624</span></pre>
+<p>One file. Bundles dot's runtime + Num/Sym/Data + the bundled <code>stats</code> demo with its sample CSV.</p>
+
+<div class="step"><div class="num">3</div><h2>Pull example data</h2></div>
+<pre class="term">
+<span class="prompt">$</span> ./dotcols --get-data
+<span class="out">fetching 10 classify ->  data/classify/
+  iris
+  wine
+  ...
+fetching 10 regression -> data/regression/
+  ...
+done. 30 files in ./data/</span></pre>
+
+<div class="step"><div class="num">4</div><h2>Try Num + Sym in a one-liner</h2></div>
+<pre class="term">
+<span class="prompt">$</span> cat &gt; tour1.awk &lt;&lt;'EOF'
+BEGIN { N = new("num"); S = new("sym")
+        printf "%-12s %5s %12s %12s\n", "column", "n", "mid", "spread" }
+      { add(N, $1, 1); add(S, $2, 1) }
+END   { printf "%-12s %5d %12.3f %12.3f\n", "AGE",   .N.n, mid(N), var(N)
+        printf "%-12s %5d %12s %12.3f\n",   "color", .S.n, mid(S), var(S) }
+EOF
+<span class="prompt">$</span> printf "10 red\n20 blue\n30 blue\n40 red\n50 blue\n" | ./dotcols tour1.awk
+<span class="out">column           n          mid       spread
+AGE              5       30.000       15.811
+color            5         blue        0.673</span></pre>
+<p>Same <code>add</code>, <code>mid</code>, <code>var</code> calls dispatch to <code>num_*</code> or <code>sym_*</code> via the <code>.it.is</code> tag set by <code>new()</code>. The output shape matches the bundled <code>stats</code> demo &mdash; same column / n / mid / spread layout.</p>
+
+<div class="step"><div class="num">5</div><h2>Run the bundled stats demo on real data</h2></div>
+<pre class="term">
+<span class="prompt">$</span> ./dotcols --demo stats data/classify/iris.csv
+<span class="out">column                      n          mid       spread
+SEPALLENGTH               150        5.843        0.828
+SEPALWIDTH                150        3.054        0.434
+PETALLENGTH               150        3.759        1.764
+PETALWIDTH                150        1.199        0.763
+class                     150   Iris-setosa        1.099</span></pre>
+<p>UPPER columns get Num (mean + stdev). lowercase get Sym (mode + entropy). One pass, O(1) per row. Same shape as step 4 &mdash; just doing it for every column at once.</p>
+
+<div class="step"><div class="num">6</div><h2>Use Data directly: ingest + inspect</h2></div>
+<pre class="term">
+<span class="prompt">$</span> cat &gt; tour2.awk &lt;&lt;'EOF'
+BEGIN { D = new("data"); FS = " *, *" }
+NR==1 { data_head(D, $0); next }
+      { data_read(D, 1) }
+END   { printf "rows=%d  cols=%d  ykind=%s\n\n", .D.nrows, .D.nc, .D.ykind
+        printf "%-3s %-14s %-3s %-3s\n", "i", "name", "kind", "y?"
+        for (i=1; i&lt;=.D.nc; i++)
+          printf "%-3d %-14s %-3s %-3s\n",
+                 i, .D.hdr[i],
+                 (.D.nump[i] ? "num" : "sym"),
+                 ((i in .D.y) ? "y" : "-") }
+EOF
+<span class="prompt">$</span> ./dotcols tour2.awk data/regression/housing.csv
+<span class="out">rows=506  cols=14  ykind=num
+
+i   name           kind  y?
+1   CRIM           num   -
+2   ZN             num   -
+3   INDUS          num   -
+4   CHAS           num   -
+5   NOX            num   -
+6   RM             num   -
+7   AGE            num   -
+8   DIS            num   -
+9   RAD            num   -
+10  TAX            num   -
+11  PTRATIO        num   -
+12  B              num   -
+13  LSTAT          num   -
+14  MEDV+          num   y</span></pre>
+<p><code>data_head</code> parses the header (sigils too &mdash; <code>+</code> means y-goal to maximize); each subsequent <code>data_read</code> feeds one row's cells into the right column object. After ingest, <code>.D.cols[i]</code> is a Num or Sym you can call <code>mid()</code>/<code>var()</code> on directly.</p>
+
+<div class="step"><div class="num">7</div><h2>Where to go next</h2></div>
+<p style="margin-left: 0;">
+  <a href="example.html">Example</a> &mdash; <code>stats.awk</code> walkthrough with code.<br>
+  <a href="manual.html">Manual</a> &mdash; Num, Sym, Data API; dispatch; conventions.<br>
+  <a href="tests.html">Tests</a> &mdash; annotated test suite, doubles as 17 mini usage snippets.<br>
+  <a href="../dotlearn/index.html">dotlearn</a> &mdash; ML on top: trees, naive Bayes, active learning.
+</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

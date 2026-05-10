@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>dot &mdash; Manual</title>
+<title>dotcols &mdash; Manual</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="../style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
 </head>
-<body class="tool-dot">
+<body class="tool-dotcols">
 
 <header>
   <div class="container">
-    <a href="../index.html" class="logo">awk / dot</a>
+    <a href="../index.html" class="logo">awk / dotcols</a>
     <nav class="top">
       <a href="../index.html">Home</a>
       <a href="index.html">Overview</a>
@@ -23,7 +23,7 @@
       <a href="tour.html">Tutorial</a>
       <a href="example.html">Example</a>
       <a href="tests.html">Tests</a>
-      <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
+      <a href="https://github.com/timm/awk/tree/master/dotcols">Source</a>
     </nav>
   </div>
 </header>
@@ -43,6 +43,9 @@
     <li><a href="#arr">arr</a></li>
     <li><a href="#zap">zap</a></li>
     <li><a href="#dispatch">dispatch</a></li>
+    <li class="group">Types (numsym.awk)</li>
+    <li><a href="#num">num</a></li>
+    <li><a href="#sym">sym</a></li>
     <li class="group">Helpers (dotlib.awk)</li>
     <li><a href="#print">o, _oo</a></li>
     <li><a href="#rogues">rogues</a></li>
@@ -52,28 +55,42 @@
     <li><a href="#files">files</a></li>
     <li><a href="#limits">limitations</a></li>
   </ul>
-  <p style="font-size: 13px; color: var(--fg-soft); margin-top: 16px;">
-    Looking for Num, Sym, Data?<br>
-    Those live in <a href="../dotcols/manual.html">dotcols</a>.
-  </p>
 </aside>
 
 <div class="content">
 
 <h1>Manual</h1>
-<p class="lead">The CLI, preprocessor, runtime, helpers, and conventions. (For Num/Sym/Data column types, see <a href="../dotcols/manual.html">dotcols</a>.)</p>
+<p class="lead">The CLI, preprocessor, runtime, types, helpers, and conventions.</p>
+
+<div style="background: var(--bg-alt); border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; margin: 20px 0 28px; font-size: 14px;">
+  <div style="margin-bottom: 8px; font-weight: 600;">Example CSV (used in code samples below)</div>
+<pre style="margin: 0;"><code class="language-bash">AGE, sex, cp,         CHOL, TARGET-, KLASS!
+63,  male, typ_angina, 233,  3.4,     low
+67,  male, asympt,     286,  2.8,     high
+41,  fem,  asympt,     250,  2.1,     low
+55,  fem,  typ_angina, 215,  2.5,     high</code></pre>
+  <div style="margin-top: 10px; color: var(--fg-soft);">
+    Header sigils tell <code>data.awk</code> what each column is for:
+    <strong>UPPER</strong> first letter = numeric (<code>AGE</code>, <code>CHOL</code>);
+    <strong>lowercase</strong> = symbolic (<code>sex</code>, <code>cp</code>);
+    suffix <strong><code>+</code> / <code>-</code></strong> = y-goal (max/min);
+    suffix <strong><code>!</code></strong> = classification target.
+    See <a href="../dotlearn/manual.html#sigils">dotlearn manual</a> for the regression/classification roles &mdash; dotcols itself doesn't use the y-flag, just stores it.
+  </div>
+</div>
 
 <section id="cli">
   <h2>dot &mdash; the CLI</h2>
   <p>One self-contained bash script (~280 lines). Bundles the preprocessor, runtime, helpers, and Num/Sym types as embedded heredocs. No directory, no Makefile.</p>
-<pre><code class="language-bash">dot FILE.awk [DATA...]    # run rewritten FILE.awk on DATA (or stdin)
-dot a.awk b.awk DATA      # multi-file run; .awk args go through prep
-cat DATA | dot FILE.awk   # stdin works too
-dot -c FILE.awk           # print rewritten source only
-dot --demo NAME [DATA]    # run demos/NAME/*.awk on DATA (or sample.*; pass `-` for stdin)
-dot --demos               # list available demos under ./demos/
-dot --show                # dump bundled lib/*.awk (post-prep)
-dot --help                # full help</code></pre>
+<pre><code class="language-bash">dotcols FILE.awk [DATA...]    # run rewritten FILE.awk on DATA (or stdin)
+dotcols a.awk b.awk DATA      # multi-file run; .awk args go through prep
+cat DATA | dotcols FILE.awk   # stdin works too
+dotcols -c FILE.awk           # print rewritten source only
+dotcols --demo NAME [DATA]    # run demos/NAME/*.awk on DATA (or sample.*)
+dotcols --demos               # list available demos under ./demos/
+dotcols --show                # dump bundled lib/*.awk (post-prep)
+dotcols --get-data            # fetch 30 curated CSVs into ./data/
+dotcols --help                # full help</code></pre>
   <p>Arg dispatch: any <code>*.awk</code> argument is preprocessed and added as a <code>-f</code> source; everything else becomes a data file. The bundled runtime is always loaded first. User <code>.awk</code> files are written to <code>${TMPDIR}/dot.XXXX/&lt;basename&gt;</code> before <code>gawk -f</code> picks them up &mdash; that way error messages preserve the original filename and line number.</p>
   <p>Built from the modular sources by <code>build.sh</code>. Edit a source file, run <code>./build.sh</code>, get a rebuilt <code>dot</code>.</p>
 </section>
@@ -97,7 +114,7 @@ HEAP[d]
 new(HEAP[d]["ykind"])</code></pre>
     </div>
   </div>
-  <p>Run the preprocessor manually with <code>dot -c file.awk</code> (one file) or <code>dot --show</code> (bundled libs).</p>
+  <p>Run the preprocessor manually with <code>dotcols -c file.awk</code> (one file) or <code>dotcols --show</code> (bundled libs).</p>
 </section>
 
 <section id="new">
@@ -134,7 +151,50 @@ function like(k, x, p, m,     fn) { fn = .k.is "_like"
                                     return @fn(k, x, p, m) }
 function var(it,    fn)  { fn = .it.is "_var"; return @fn(it) }
 function mid(it,    fn)  { fn = .it.is "_mid"; return @fn(it) }</code></pre>
-  <p>The dispatch pattern (one line builds the name, one line calls it) is the only thing dot itself defines. Concrete types like <code>num</code> and <code>sym</code> with their <code>num_add</code>/<code>sym_add</code>/<code>num_mid</code>/<code>sym_mid</code> functions live in the <a href="../dotcols/manual.html">dotcols</a> layer.</p>
+  <p>Dispatchers live in <code>numsym.awk</code>: <code>add</code>, <code>like</code>, <code>mid</code>, <code>var</code>. To add a new one, follow the pattern &mdash; one line builds the name, one line calls it.</p>
+</section>
+
+<section id="num">
+  <h2>num</h2>
+  <p>Numeric column. Welford running mean + variance with optional weight. <code>w=1</code> adds, <code>w=-1</code> subtracts (used by the active learner to evict rows).</p>
+<pre><code class="language-c">function num_add(it, x, train, w,    d, d2) {
+  w = (w == "" ? 1 : w + 0)
+  if (x == "?") return x
+  x += 0
+  if (!train) return x
+  if (w &lt; 0 && .it.n &lt;= 2) { .it.n=0; .it.mu=0; .it.m2=0; return x }
+  .it.n  += w
+  d  = x - .it.mu;  .it.mu += w * d / .it.n
+  d2 = x - .it.mu;  .it.m2 += w * d * d2
+  return x }
+
+function num_var(it) {
+  return .it.n &lt; 2 ? 0 : sqrt(.it.m2 / (.it.n - 1)) }
+
+function num_mid(it) { return .it.mu }</code></pre>
+</section>
+
+<section id="sym">
+  <h2>sym</h2>
+  <p>Symbolic column. Counts table, mode, entropy. Optional weight for sub.</p>
+<pre><code class="language-c">function sym_init(it)   { arr(.it.has); return it }
+
+function sym_add(it, x, train, w) {
+  w = (w == "" ? 1 : w + 0)
+  if (x == "?" || !train) return x
+  .it.n      += w
+  .it.has[x] += w
+  if (.it.has[x] &lt;= 0) delete .it.has[x]
+  return x }
+
+function sym_var(it,    e, k, p) {
+  for (k in .it.has) { p = .it.has[k]/.it.n; e -= p*log(p) }
+  return e }
+
+function sym_mid(it,    k, b, bv) {
+  bv = -1
+  for (k in .it.has) if (.it.has[k] &gt; bv) { bv = .it.has[k]; b = k }
+  return b }</code></pre>
 </section>
 
 <section id="print">
@@ -198,14 +258,15 @@ _oo(a, "&lt;", "&gt;", "@ind_str_asc", 1)   # angle-bracket dict</code></pre>
   <h4 style="margin-bottom: 4px; margin-top: 24px;">In the repo (for editing)</h4>
   <table>
     <tr><th>File</th><th>Lines</th><th>Purpose</th><th>How it ships</th></tr>
-    <tr><td><code>build.sh</code></td><td>~180</td><td>assembles <code>dot</code> from <code>lib/</code></td><td>not bundled (build-time only)</td></tr>
-    <tr><td><code>lib/prep.awk</code></td><td>10</td><td>preprocessor (one rule, two regex sweeps)</td><td>heredoc inside <code>dot</code></td></tr>
-    <tr><td><code>lib/dot.awk</code></td><td>14</td><td>runtime: <code>new</code>, <code>arr</code>, <code>zap</code></td><td>heredoc inside <code>dot</code></td></tr>
-    <tr><td><code>lib/dotlib.awk</code></td><td>34</td><td>helpers: <code>rogues</code>, <code>o</code>, <code>_oo</code></td><td>heredoc inside <code>dot</code></td></tr>
-    <tr><td><code>demos/hello/hello.awk</code></td><td>6</td><td>smallest example: running mean</td><td>shipped in repo, runs via <code>dot --demo hello</code></td></tr>
-    <tr><td><code>demos/hello/sample.txt</code></td><td>5</td><td>auto-loaded sample for hello demo</td><td>shipped in repo</td></tr>
+    <tr><td><code>build.sh</code></td><td>~180</td><td>assembles <code>dot</code> from the sources</td><td>not bundled (build-time only)</td></tr>
+    <tr><td><code>prep.awk</code></td><td>10</td><td>preprocessor (one rule, two regex sweeps)</td><td>heredoc inside <code>dot</code></td></tr>
+    <tr><td><code>dot.awk</code></td><td>14</td><td>runtime: <code>new</code>, <code>arr</code>, <code>zap</code></td><td>heredoc inside <code>dot</code></td></tr>
+    <tr><td><code>dotlib.awk</code></td><td>34</td><td>helpers: <code>rogues</code>, <code>o</code>, <code>_oo</code></td><td>heredoc inside <code>dot</code></td></tr>
+    <tr><td><code>numsym.awk</code></td><td>66</td><td><code>num</code>/<code>sym</code> types + dispatchers <code>add</code>, <code>like</code>, <code>mid</code>, <code>var</code></td><td>heredoc inside <code>dot</code></td></tr>
+    <tr><td><code>hello.awk</code></td><td>6</td><td>smallest example: running mean</td><td>heredoc inside <code>dot</code> (used by <code>--hello</code>)</td></tr>
+    <tr><td><code>stats.awk</code></td><td>25</td><td>per-column stats main program</td><td>heredoc inside <code>dot</code> (used by <code>--stats</code>)</td></tr>
   </table>
-  <p style="margin-top: 12px;">So: the install is one file (<code>dot</code>). The repo holds <code>lib/</code> sources, <code>build.sh</code>, and any number of <code>demos/NAME/</code> directories that <code>dot --demo NAME</code> can run. Higher layers (<a href="../dotcols/index.html">dotcols</a>, <a href="../dotlearn/index.html">dotlearn</a>) ship their own binaries that bundle dot's <code>lib/</code> plus their own.</p>
+  <p style="margin-top: 12px;">So: the install is one file (<code>dot</code>). The repo holds the seven editable sources plus <code>build.sh</code>. Tempfiles are runtime artifacts and get cleaned up on exit.</p>
 </section>
 
 <section id="limits">
@@ -213,7 +274,7 @@ _oo(a, "&lt;", "&gt;", "@ind_str_asc", 1)   # angle-bracket dict</code></pre>
   <p>Read these before deploying to anything you care about.</p>
   <ul style="margin-left: 24px;">
     <li><strong>Preprocessor is regex, not a parser.</strong> A literal <code>".x"</code> inside a string or regex constant gets rewritten too. So does <code>printf "%.3f"</code> if a value-char precedes the dot. Workaround: split the dot across strings so it has a quote on each side &mdash; <code>printf "%" "." "3f"</code>, or build basenames as <code>name "." ext</code>. (Quotes are not value-chars, so the regex skips it.) For object code, rename the field or write raw <code>HEAP[x]</code> directly.</li>
-    <li><strong>Comments are not stripped.</strong> A <code>.x</code> inside a <code># ...</code> comment also rewrites. Harmless but ugly in <code>dot --show</code> output.</li>
+    <li><strong>Comments are not stripped.</strong> A <code>.x</code> inside a <code># ...</code> comment also rewrites. Harmless but ugly in <code>dotcols --show</code>.</li>
     <li><strong><code>.it.is</code> is a reserved field name.</strong> Used internally for type dispatch. Don't shadow it.</li>
     <li><strong><code>zap(i)</code> is the only memory hook.</strong> No GC, no refcount &mdash; you decide when an object is done with and call <code>zap(i)</code> to clear its <code>HEAP</code> slot.</li>
     <li><strong>Monotonic IDs, not recycled.</strong> <code>NID</code> only ever increments; <code>zap</code> deletes a slot's contents but never reuses its id. Not a big deal &mdash; an id is just an int, so accumulation costs effectively nothing. The slot contents stay zapped, no leak.</li>

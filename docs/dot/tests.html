@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dot &mdash; Tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+</head>
+<body class="tool-dot">
+
+<header>
+  <div class="container">
+    <a href="../index.html" class="logo">awk / dot</a>
+    <nav class="top">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Overview</a>
+      <a href="install.html">Install</a>
+      <a href="manual.html">Manual</a>
+      <a href="tour.html">Tutorial</a>
+      <a href="example.html">Example</a>
+      <a href="tests.html">Tests</a>
+      <a href="https://github.com/timm/awk/tree/master/dot">Source</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+<div class="page">
+
+<h1>Annotated tests</h1>
+<p class="lead">The smoke-test suite for <code>dot</code> &mdash; <code>tests/test.sh</code>. 26 tests over 7 sections: build, help, preprocessor, demo runner, errors, runtime, printer. Each test is a tiny usage snippet you can lift verbatim.</p>
+
+<p>Run yourself:</p>
+<pre><code class="language-bash">cd dot
+./tests/test.sh
+# All 26 tests passed.</code></pre>
+
+<h2>1. Build &mdash; the binary assembles and is executable</h2>
+<p>Sanity gate: if the build step itself fails, nothing else is meaningful.</p>
+<pre><code class="language-bash">out=$(./build.sh 2>&amp;1)
+contains "build.sh runs"           "built dot" "$out"
+[ -x "$DOT" ]                       &amp;&amp; ok "dot is executable" || bad ...</code></pre>
+<p><strong>Asserts:</strong> <code>build.sh</code> emits the line <code>built dot ...</code>; the resulting <code>dot</code> file has the executable bit set. Catches missing <code>chmod +x</code> at the end of the build, or the heredoc termination going off the rails.</p>
+
+<h2>2. Help &amp; discovery &mdash; the dispatcher works</h2>
+<p>The dispatcher is a one-shot bash <code>case</code>. These tests verify each branch is reachable and prints something sensible.</p>
+<pre><code class="language-bash">contains "no args -> usage"        "Usage:" "$($DOT 2&gt;&amp;1)"
+contains "--help has Usage"        "Usage:" "$($DOT --help)"
+contains "--help lists --demo"     "--demo" "$($DOT --help)"
+contains "--demos lists hello"     "hello" "$($DOT --demos)"</code></pre>
+<p><strong>Asserts:</strong> bare <code>dot</code> shows usage; <code>--help</code> shows usage and lists the <code>--demo</code> subcommand; <code>--demos</code> finds <code>demos/hello/</code> on disk and prints it. The last test exercises the filesystem-driven demo discovery &mdash; if you add a <code>demos/foo/</code> directory, that command will list it without any code change.</p>
+
+<h2>3. Preprocessor &mdash; the regex rewrites are correct</h2>
+<p>The heart of <code>dot</code>. Each <code>eq</code> compares input source against expected rewritten output. <code>dot -c FILE</code> prints the rewrite without running gawk.</p>
+<pre><code class="language-bash">eq "field rewrite"       'HEAP[it]["n"]++'         "$(echo '.it.n++' | $DOT -c /dev/stdin)"
+eq "object rewrite"      'HEAP[d]'                 "$(echo '.d' | $DOT -c /dev/stdin)"
+eq "nested rewrite"      'HEAP[d]["rows"][r][i]'   "$(echo '.d.rows[r][i]' | $DOT -c /dev/stdin)"
+eq "explicit dot ok"     '"fred" "." "csv"'        "$(echo '"fred" "." "csv"' | $DOT -c /dev/stdin)"
+eq "no dots = passthrough"  'NAME[i] = $i'         "$(echo 'NAME[i] = $i' | $DOT -c /dev/stdin)"</code></pre>
+<p><strong>Asserts:</strong></p>
+<ul style="margin-left: 24px;">
+<li><strong>field rewrite:</strong> <code>.it.n</code> &rarr; <code>HEAP[it]["n"]</code> (value-char before dot &rarr; struct field).</li>
+<li><strong>object rewrite:</strong> bare <code>.d</code> &rarr; <code>HEAP[d]</code> (no value-char before dot &rarr; object reference).</li>
+<li><strong>nested rewrite:</strong> both rules combine properly &mdash; struct field <em>plus</em> object subscript.</li>
+<li><strong>explicit dot:</strong> <code>"fred" "." "csv"</code> survives unchanged. Quote isn't a value-char, so the dot stays a literal.</li>
+<li><strong>passthrough:</strong> awk code with no dots is byte-identical after prep. Means most existing awk programs run untouched.</li>
+</ul>
+
+<h2>4. Demo runner &mdash; <code>--demo</code> handles all three input modes</h2>
+<p>The <code>--demo</code> subcommand has three input-resolution rules. Each gets a test.</p>
+<pre><code class="language-bash">eq "--demo hello (sample.txt)"     "n=5 mean=30.000"   "$($DOT --demo hello)"
+eq "--demo hello (- means stdin)"  "n=3 mean=20.000"   "$(printf '10\n20\n30\n' | $DOT --demo hello -)"
+eq "--demo hello (DATA arg)"       "n=2 mean=15.000"   "$($DOT --demo hello &lt;(printf '10\n20\n'))"</code></pre>
+<p><strong>Asserts:</strong></p>
+<ul style="margin-left: 24px;">
+<li>No DATA arg &rarr; auto-load <code>demos/hello/sample.txt</code> (5 numbers averaging 30).</li>
+<li>DATA = <code>-</code> &rarr; read stdin instead. Sample is ignored.</li>
+<li>Explicit DATA file &rarr; use it. Sample is ignored.</li>
+</ul>
+<p>If the sample-fallback ever silently consumes piped stdin (a real bug we caught earlier), the second test fails immediately.</p>
+
+<h2>5. Errors &mdash; bad input fails loudly, not silently</h2>
+<pre><code class="language-bash">out=$($DOT --demo nonesuch 2&gt;&amp;1 || true)
+contains "missing demo errors"     "no such demo" "$out"
+out=$($DOT -c 2&gt;&amp;1 || true)
+contains "-c needs file"           "need FILE.awk" "$out"</code></pre>
+<p><strong>Asserts:</strong> requesting a non-existent demo prints <code>no such demo</code> on stderr (not a cryptic gawk error); calling <code>-c</code> with no filename prints <code>need FILE.awk</code>. Both exit non-zero.</p>
+
+<h2>6. Runtime &mdash; <code>new</code>, <code>arr</code>, <code>zap</code>, <code>.field</code> sugar</h2>
+<p>Each test inlines a tiny awk program (via the <code>run_inline</code> helper) that exercises one runtime function.</p>
+<pre><code class="language-bash">eq "new + .field"   "7 1.5" "$(run_inline '
+  BEGIN { N = new("plain"); .N.n = 7; .N.mu = 1.5
+          printf "%d %.1f\n", .N.n, .N.mu }')"
+
+eq "zap drops slot" "gone"  "$(run_inline '
+  BEGIN { N = new("x"); .N.n = 1; zap(N)
+          printf "%s\n", ((N in HEAP) ? "kept" : "gone") }')"
+
+eq "arr + nested key" "2"   "$(run_inline '
+  BEGIN { N = new("y"); arr(.N.has); .N.has["a"] = 2
+          printf "%d\n", .N.has["a"] }')"</code></pre>
+<p><strong>Asserts:</strong></p>
+<ul style="margin-left: 24px;">
+<li><strong>new + .field:</strong> <code>new("plain")</code> returns an id; <code>.N.n</code> and <code>.N.mu</code> are real <code>HEAP</code> slots that round-trip values.</li>
+<li><strong>zap drops slot:</strong> after <code>zap(N)</code>, the id is no longer present in <code>HEAP</code>. (Doesn't recycle the id &mdash; just clears the slot.)</li>
+<li><strong>arr + nested key:</strong> <code>arr(.N.has)</code> makes <code>.N.has</code> a real array, and you can write keys into it. Without <code>arr</code>, gawk would treat the first assignment as scalar and refuse the subscript.</li>
+</ul>
+
+<h2>7. Printer &mdash; <code>o</code> + <code>_oo</code> formatting</h2>
+<p>One <code>o(x)</code> call per case, capturing the raw printf output.</p>
+<pre><code class="language-bash">eq "o(int)"                "5"            "$(run_inline 'BEGIN{o(5); print ""}')"
+eq "o(5.0) collapses"      "5"            "$(run_inline 'BEGIN{o(5.0); print ""}')"
+eq "o(5.123)"              "5.123"        "$(run_inline 'BEGIN{o(5.123); print ""}')"
+eq "o(string)"             "hi"           "$(run_inline 'BEGIN{o("hi"); print ""}')"
+eq "o(list)"               "[1, 2, 3]"    "$(run_inline 'BEGIN{a[1]=1;a[2]=2;a[3]=3; o(a); print ""}')"
+eq "o(dict sorted)"        "{a: 1, b: 2}" "$(run_inline 'BEGIN{b["b"]=2; b["a"]=1; o(b); print ""}')"
+eq "o(list numeric sort)"  "[3, 2, 1]"    "$(run_inline 'BEGIN{a[10]=1;a[2]=2;a[1]=3; o(a); print ""}')"</code></pre>
+<p><strong>Asserts each format rule:</strong></p>
+<ul style="margin-left: 24px;">
+<li><code>5</code> &rarr; <code>5</code>; <code>5.0</code> &rarr; <code>5</code> (whole-valued floats print as <code>%d</code>).</li>
+<li><code>5.123</code> &rarr; <code>5.123</code> (other numbers as <code>%G</code>).</li>
+<li><code>"hi"</code> &rarr; <code>hi</code> (strings as <code>%s</code>).</li>
+<li>Array with <code>1 in a</code> &rarr; <code>[..]</code> list; otherwise <code>{..}</code> dict.</li>
+<li>List with sparse keys (<code>1, 2, 10</code>) sorts <em>numerically</em> &mdash; not lexically (which would put 10 between 1 and 2). The values at those keys (3, 2, 1) appear in that order.</li>
+</ul>
+
+<h2>What this proves</h2>
+<ul style="margin-left: 24px;">
+<li>The build pipeline works end-to-end.</li>
+<li>Every <code>--</code> subcommand is reachable.</li>
+<li>The two preprocessor rules are correctly applied, including the no-rewrite passthrough case.</li>
+<li>The three input-resolution paths in <code>--demo</code> are independent.</li>
+<li>Errors surface on stderr, not as gawk crashes.</li>
+<li>The runtime functions (<code>new</code>, <code>arr</code>, <code>zap</code>) and <code>.field</code> sugar all behave per spec.</li>
+<li>The printer collapses integer-valued floats and sorts list keys numerically &mdash; the two cases most likely to surprise.</li>
+</ul>
+
+<p>If you change anything in <code>lib/</code>, run <code>./tests/test.sh</code>. Two minutes round-trip, end to end. The tests double as the smallest possible usage examples for every public function.</p>
+
+</div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tim Menzies &middot; <a href="https://github.com/timm/awk/blob/master/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/timm/awk">github.com/timm/awk</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>
